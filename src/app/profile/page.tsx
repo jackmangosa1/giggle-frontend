@@ -97,6 +97,7 @@ const ServiceProviderProfile: React.FC = () => {
   };
 
   const openDateTimeModal = (): void => {
+    setIsModalOpen(false);
     setIsDateTimeModalOpen(true);
   };
 
@@ -281,7 +282,7 @@ const ServiceProviderProfile: React.FC = () => {
             <div
               key={item.id}
               className="relative group cursor-pointer"
-              onClick={() => openReviewModal(item)} 
+              onClick={() => openReviewModal(item)}
             >
               {/* Portfolio Image */}
               <div className="relative group overflow-hidden">
