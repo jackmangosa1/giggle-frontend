@@ -4,10 +4,9 @@ import { FaRegUserCircle, FaStar, FaCheck, FaSearchPlus } from "react-icons/fa";
 import { BiMessageSquareDetail } from "react-icons/bi";
 import Image from "next/image";
 import { Modal, Button, DatePicker, TimePicker, Rate, Input } from "antd";
-import CleaningImage from "../assets/cleaning.jpg";
+import CleaningImage from "../../assets/cleaning.jpg";
 import { StaticImageData } from "next/image";
-import Sidebar from "../components/Sidebar";
-// Interfaces
+
 interface Service {
   id: number;
   title: string;
@@ -219,7 +218,6 @@ const ServiceProviderProfile: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
       <div className="w-full max-w-4xl mx-auto bg-gray-50 flex-1 ml-16 md:ml-96">
         <div className="bg-white p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between">
           <div className="flex items-center">

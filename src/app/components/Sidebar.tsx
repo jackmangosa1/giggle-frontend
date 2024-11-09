@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import {
   AiFillHome,
@@ -7,6 +8,7 @@ import {
   AiOutlineMenu,
 } from "react-icons/ai";
 import { IconType } from "react-icons";
+import { useRouter } from "next/navigation";
 
 interface MenuItemProps {
   icon: IconType;
@@ -51,28 +53,48 @@ interface MenuItem {
   id: string;
   icon: IconType;
   label: string;
+  link: string;
   notifications?: number;
 }
 
 const Sidebar: React.FC = () => {
+  const router = useRouter();
   const [activeItem, setActiveItem] = useState<string>("home");
 
   const menuItems: MenuItem[] = [
-    { id: "home", icon: AiFillHome, label: "Home" },
+    { id: "home", icon: AiFillHome, label: "Home", link: "/" },
     {
       id: "messages",
       icon: AiFillMessage,
       label: "Messages",
+      link: "/messages",
       notifications: 1,
     },
-    { id: "notifications", icon: AiFillHeart, label: "Notifications" },
-    { id: "profile", icon: AiOutlineUser, label: "Profile" },
+    {
+      id: "notifications",
+      icon: AiFillHeart,
+      label: "Notifications",
+      link: "/notifications",
+    },
+    {
+      id: "profile",
+      icon: AiOutlineUser,
+      label: "Profile",
+      link: "/user-profile",
+    },
   ];
+
+  const handleItemClick = (id: string, link: string) => {
+    setActiveItem(id);
+    router.push(link);
+  };
 
   return (
     <div className="fixed left-0 h-full w-16 md:w-64 flex flex-col bg-white border-r shadow-sm">
-      {/* Logo */}
-      <div className="p-4 md:p-6 border-b">
+      <div
+        className="p-4 md:p-6 border-b cursor-pointer"
+        onClick={() => router.push("/")}
+      >
         <div className="hidden md:flex items-center">
           <span className="text-blue-600 text-2xl font-bold italic">G</span>
           <span className="font-semibold">iggle</span>
@@ -83,7 +105,6 @@ const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1">
         {menuItems.map((item) => (
           <MenuItem
@@ -92,12 +113,11 @@ const Sidebar: React.FC = () => {
             label={item.label}
             notifications={item.notifications}
             isActive={activeItem === item.id}
-            onClick={() => setActiveItem(item.id)}
+            onClick={() => handleItemClick(item.id, item.link)}
           />
         ))}
       </nav>
 
-      {/* More Menu */}
       <div className="border-t">
         <MenuItem icon={AiOutlineMenu} label="More" />
       </div>

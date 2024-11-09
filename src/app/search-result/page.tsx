@@ -6,6 +6,7 @@ import { FiMapPin } from "react-icons/fi";
 import ProfileImage from "../assets/dressMaker.jpg";
 import { StaticImageData } from "next/image";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface ServiceProvider {
   id: string;
@@ -70,6 +71,7 @@ const mockServiceProviders: ServiceProvider[] = [
 ];
 
 const Page: React.FC = () => {
+  const router = useRouter();
   const [sortBy, setSortBy] = useState("recommended");
   const [priceRange, setPriceRange] = useState([0, 500]);
   const [minRating, setMinRating] = useState(4);
@@ -159,6 +161,7 @@ const Page: React.FC = () => {
           <div className="lg:col-span-3 space-y-4">
             {mockServiceProviders.map((provider) => (
               <div
+                onClick={() => router.push("/profile")}
                 key={provider.id}
                 className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-4 md:p-6"
               >
