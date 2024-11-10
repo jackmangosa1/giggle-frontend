@@ -3,12 +3,22 @@ import React, { useState } from "react";
 import { AiOutlineMenu } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import MenuItem from "../components/MenuItem";
+import { MdWorkOutline, MdMiscellaneousServices } from "react-icons/md";
+
+interface SubMenuItem {
+  id: string;
+  icon: React.ReactNode;
+  label: string;
+  link: string;
+}
+
 interface SidebarMenuItem {
   id: string;
   icon: React.ReactNode;
   label: string;
   link: string;
   notifications?: number;
+  subItems?: SubMenuItem[];
 }
 
 interface SidebarProps {
@@ -18,8 +28,18 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
   const router = useRouter();
   const [activeItem, setActiveItem] = useState<string>("");
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
-  const handleItemClick = (id: string, link: string) => {
+  const handleItemClick = (item: SidebarMenuItem) => {
+    if (item.subItems) {
+      setExpandedItem(expandedItem === item.id ? null : item.id);
+    } else {
+      setActiveItem(item.id);
+      router.push(item.link);
+    }
+  };
+
+  const handleSubItemClick = (link: string, id: string) => {
     setActiveItem(id);
     router.push(link);
   };
@@ -42,14 +62,29 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
 
       <nav className="flex-1">
         {menuItems.map((item) => (
-          <MenuItem
-            key={item.id}
-            icon={item.icon}
-            label={item.label}
-            notifications={item.notifications}
-            isActive={activeItem === item.id}
-            onClick={() => handleItemClick(item.id, item.link)}
-          />
+          <div key={item.id}>
+            <MenuItem
+              icon={item.icon}
+              label={item.label}
+              notifications={item.notifications}
+              isActive={activeItem === item.id}
+              onClick={() => handleItemClick(item)}
+            />
+            {item.subItems && expandedItem === item.id && (
+              <div className="bg-gray-50">
+                {item.subItems.map((subItem) => (
+                  <MenuItem
+                    key={subItem.id}
+                    icon={subItem.icon}
+                    label={subItem.label}
+                    isActive={activeItem === subItem.id}
+                    onClick={() => handleSubItemClick(subItem.link, subItem.id)}
+                    className="pl-8 md:pl-12"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </nav>
 
