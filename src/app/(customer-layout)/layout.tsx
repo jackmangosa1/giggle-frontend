@@ -30,7 +30,7 @@ export default function CustomerLayout({
       id: "profile",
       icon: <AiOutlineUser />,
       label: "Profile",
-      link: "/profile",
+      link: "/user-profile",
     },
   ];
 

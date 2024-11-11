@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import { Select, Slider, Rate } from "antd";
 import { AiOutlineClockCircle, AiOutlineLike } from "react-icons/ai";
-import { FiMapPin } from "react-icons/fi";
-import ProfileImage from "../assets/dressMaker.jpg";
+import { FiMapPin, FiChevronLeft } from "react-icons/fi";
+import ProfileImage from "../assets/cleaning.jpg";
 import { StaticImageData } from "next/image";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -81,14 +81,23 @@ const Page: React.FC = () => {
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
-            <div>
-              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                Cleaning Services in New York
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                {mockServiceProviders.length} service providers available
-              </p>
+            <div className="flex justify-center gap-5">
+              <button
+                onClick={() => router.back()}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow-sm hover:shadow transition-shadow"
+              >
+                <FiChevronLeft className="w-6 h-6 text-gray-600" />
+              </button>
+              <div>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Cleaning Services in New York
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  {mockServiceProviders.length} service providers available
+                </p>
+              </div>
             </div>
+
             <div className="flex items-center space-x-4">
               <Select
                 value={sortBy}
@@ -108,7 +117,7 @@ const Page: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Visible on Mobile in Row Format */}
+          {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-6 lg:block flex flex-col sm:flex-row sm:space-y-0 sm:space-x-4">
               <div className="flex-1">
@@ -158,12 +167,13 @@ const Page: React.FC = () => {
             </div>
           </div>
 
+          {/* Service Provider Cards */}
           <div className="lg:col-span-3 space-y-4">
             {mockServiceProviders.map((provider) => (
               <div
                 onClick={() => router.push("/profile")}
                 key={provider.id}
-                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-4 md:p-6"
+                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-4 md:p-6 cursor-pointer"
               >
                 <div className="flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-4">
                   <div className="flex-shrink-0">

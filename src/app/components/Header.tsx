@@ -3,8 +3,10 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { RiMenu3Fill } from "react-icons/ri";
 import { IoClose } from "react-icons/io5";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -31,6 +33,7 @@ const Header = () => {
           <button
             type="button"
             className="px-5 py-2 bg-blue-500 text-white rounded-md font-semibold text-sm hover:bg-blue-600 transition-colors duration-200 shadow-md"
+            onClick={() => router.push("/provider/signup")}
           >
             Join as a Pro
           </button>
