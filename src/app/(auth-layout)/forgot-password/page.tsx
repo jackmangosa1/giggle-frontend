@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import apiRoutes from "../../config/apiRoutes";
 
 interface Errors {
   email?: string;
@@ -49,7 +50,7 @@ const Page = () => {
     setErrors((prev) => ({ ...prev, ...fieldErrors }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const fieldErrors = validateField("email", formData.email);
@@ -60,8 +61,29 @@ const Page = () => {
       return;
     }
 
-    console.log("Reset password requested for:", formData.email);
-    setIsSubmitted(true);
+    try {
+      const response = await fetch(apiRoutes.forgotPassword, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          clientUri: "http://localhost:3000/reset-password",
+        }),
+      });
+
+      if (response.ok) {
+        console.log("Reset password requested for:", formData.email);
+        setIsSubmitted(true);
+      } else {
+        const errorData = await response.json();
+        setErrors({ email: errorData.message || "An error occurred" });
+      }
+    } catch (error) {
+      setErrors({ email: "An error occurred. Please try again later." });
+      console.error("Error:", error);
+    }
   };
 
   return (

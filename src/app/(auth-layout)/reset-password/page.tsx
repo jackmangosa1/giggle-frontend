@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import apiRoutes from "../../config/apiRoutes";
+import { useSearchParams } from "next/navigation";
 
 interface Errors {
   password?: string;
@@ -7,6 +9,7 @@ interface Errors {
 }
 
 const Page = () => {
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
@@ -14,7 +17,11 @@ const Page = () => {
 
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const email = searchParams.get("email");
+  const token = searchParams.get("token");
 
   const validateField = (name: string, value: string) => {
     const newErrors: Errors = {};
@@ -58,7 +65,7 @@ const Page = () => {
     setErrors((prev) => ({ ...prev, ...fieldErrors }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const passwordErrors = validateField("password", formData.password);
@@ -74,12 +81,38 @@ const Page = () => {
 
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
-      setTouched({ email: true, password: true, confirmPassword: true });
+      setTouched({ password: true, confirmPassword: true });
       return;
     }
 
-    console.log("Form submitted with:", formData);
-    setIsSubmitted(true);
+    try {
+      setLoading(true);
+      const response = await fetch(apiRoutes.resetPassword, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          email: email as string,
+          token: token as string,
+        }),
+      });
+
+      if (response.ok) {
+        setIsSubmitted(true);
+      } else {
+        const errorData = await response.json();
+        setErrors({
+          password: errorData.message || "Error resetting password",
+        });
+      }
+    } catch (error) {
+      setErrors({ password: "Something went wrong. Please try again later." });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -146,9 +179,10 @@ const Page = () => {
 
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none transition-colors"
               >
-                Send
+                {loading ? "Sending..." : "Send"}
               </button>
 
               <div className="text-sm text-center text-gray-600">

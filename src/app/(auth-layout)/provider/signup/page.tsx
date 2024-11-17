@@ -1,5 +1,8 @@
 "use client";
+import apiRoutes from "@/app/config/apiRoutes";
+import { message } from "antd";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Errors {
   username?: string;
@@ -9,6 +12,7 @@ interface Errors {
 }
 
 const Page = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -18,6 +22,7 @@ const Page = () => {
 
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [, setLoading] = useState(false);
 
   const validateField = (name: string, value: string) => {
     const newErrors: Errors = {};
@@ -88,7 +93,7 @@ const Page = () => {
     setErrors((prev) => ({ ...prev, ...fieldErrors }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     let formErrors: Errors = {};
@@ -102,7 +107,6 @@ const Page = () => {
 
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
-
       setTouched({
         username: true,
         email: true,
@@ -111,7 +115,51 @@ const Page = () => {
       });
       return;
     }
-    console.log("Form submitted:", formData);
+
+    try {
+      setLoading(true);
+      message.loading({ content: "Creating account...", key: "signup" });
+
+      // Send sign-up request to the backend
+      const response = await fetch(apiRoutes.signupProvider, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userName: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrors({ email: data.error || "Failed to sign up" });
+        message.error({
+          content: data.error || "Failed to sign up",
+          key: "signup",
+        });
+      } else {
+        message.success({
+          content: "Account created successfully! Please log in.",
+          key: "signup",
+        });
+        setFormData({
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        router.push("/login");
+      }
+    } catch (error) {
+      setErrors({ email: "An unexpected error occurred" });
+      message.error({ content: "An unexpected error occurred", key: "signup" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

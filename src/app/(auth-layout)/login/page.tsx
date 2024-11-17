@@ -1,5 +1,8 @@
 "use client";
 import { useState } from "react";
+import apiRoutes from "../../config/apiRoutes";
+import { message } from "antd";
+import { useRouter } from "next/navigation";
 
 interface Errors {
   email?: string;
@@ -14,6 +17,8 @@ const Page = () => {
 
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const validateField = (name: string, value: string) => {
     const newErrors: Errors = {};
@@ -60,7 +65,7 @@ const Page = () => {
     setErrors((prev) => ({ ...prev, ...fieldErrors }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     let formErrors: Errors = {};
@@ -80,7 +85,46 @@ const Page = () => {
       });
       return;
     }
-    console.log("Login attempt:", formData);
+
+    try {
+      setLoading(true);
+
+      // Send login request to the backend
+      const response = await fetch(apiRoutes.login, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (
+          response.status === 400 &&
+          data.error === "Email confirmation required."
+        ) {
+          setErrors({
+            email:
+              "Please check your inbox to verify your email before logging in.",
+          });
+          return; // Exit here so the catch block is not triggered
+        } else {
+          setErrors({ email: data.error || "Failed to log in" });
+        }
+      } else {
+        router.push("/");
+      }
+    } catch (error) {
+      setErrors({ email: "An unexpected error occurred" });
+      message.error({ content: "An unexpected error occurred", key: "login" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -111,7 +155,7 @@ const Page = () => {
                   : "border-gray-300"
               }`}
             />
-            {errors.email && touched.email && (
+            {errors.email && (
               <p className="mt-1 text-sm text-red-500">{errors.email}</p>
             )}
           </div>
@@ -168,7 +212,7 @@ const Page = () => {
             type="submit"
             className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none transition-colors"
           >
-            Log in
+            {loading ? "Logging in..." : "Log in"}
           </button>
 
           <div className="text-sm text-center text-gray-600">
