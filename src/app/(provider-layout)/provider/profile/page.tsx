@@ -1,380 +1,295 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
-  FiChevronLeft,
-  FiUser,
   FiCamera,
   FiEdit2,
-  FiMapPin,
-  FiPhone,
-  FiMail,
-  FiLock,
-  FiChevronRight,
-  FiCheck,
+  FiTrash2,
+  FiExternalLink,
+  FiChevronLeft,
+  FiX,
 } from "react-icons/fi";
-import Image from "next/image";
+import { LiaToolsSolid } from "react-icons/lia";
+import { MdWork } from "react-icons/md";
+import Image, { StaticImageData } from "next/image";
+import { AutoComplete, Button } from "antd";
 import CleaningImage from "../../../assets/cleaning.jpg";
+import PortfolioCard from "../../../components/ProviderPortfolioCard";
+import ServiceCard from "../../../components/ProviderServiceCard";
+import EditProfileModal from "../../../components/EditProviderProfileModal";
 
-interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
+interface ProviderProfile {
+  displayName?: string;
+  bio?: string;
+  skills?: string[];
+  profilePictureUrl?: StaticImageData;
 }
 
-interface UserProfile {
+interface Service {
+  id: string;
   name: string;
-  email: string;
-  phone: string;
-  address: Address;
-  profilePicture: string;
+  description: string;
+  imageUrl: StaticImageData;
 }
 
-const ProfileSection = ({
-  title,
-  children,
-  onEdit,
-}: {
+interface Portfolio {
+  id: string;
   title: string;
-  children: React.ReactNode;
-  onEdit?: () => void;
-}) => (
-  <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-      {onEdit && (
-        <button
-          onClick={onEdit}
-          className="text-blue-500 hover:text-blue-600 text-sm font-medium"
-        >
-          Edit
-        </button>
-      )}
-    </div>
-    {children}
-  </div>
-);
+  description: string;
+  imageUrl: StaticImageData;
+}
 
-const EditModal = ({
-  title,
-  onClose,
-  onSave,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  onSave: () => void;
-  children: React.ReactNode;
-}) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div className="bg-white rounded-lg w-full max-w-md mx-4">
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100"
-          >
-            <FiChevronLeft className="h-6 w-6 text-gray-700" />
-          </button>
-          <h2 className="text-lg font-semibold">{title}</h2>
-        </div>
-        <button
-          onClick={onSave}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-        >
-          Save
-        </button>
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  </div>
-);
-
-const Page = () => {
+const ProfilePage = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserProfile>({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 234 567 8900",
-    address: {
-      street: "123 Main St",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "United States",
-    },
-    profilePicture: "/path/to/profile.jpg",
+  const [skillInput, setSkillInput] = useState<string>("");
+  const [focused, setFocused] = useState(false);
+  const [allSkills] = useState<string[]>([
+    "Cleaning",
+    "Gardening",
+    "Plumbing",
+    "Electrical",
+    "Painting",
+    "Landscaping",
+    "Home Repair",
+    "Carpentry",
+    "HVAC",
+    "Roofing",
+  ]);
+
+  const [profile, setProfile] = useState<ProviderProfile>({
+    displayName: "John Doe",
+    bio: "Experienced service provider with expertise in multiple areas",
+    skills: ["Cleaning", "Gardening"],
+    profilePictureUrl: CleaningImage,
   });
 
-  const [editForm, setEditForm] = useState<Partial<UserProfile>>(profile);
-  const [editAddress, setEditAddress] = useState<Address>(profile.address);
+  const [editForm, setEditForm] = useState<ProviderProfile>({
+    displayName: profile.displayName,
+    bio: profile.bio,
+    skills: profile.skills,
+  });
 
-  const handleEditProfile = () => {
-    setEditForm(profile);
-    setActiveModal("profile");
+  const filteredSkills = useMemo(() => {
+    return allSkills.filter(
+      (skill) =>
+        skill.toLowerCase().includes(skillInput.toLowerCase()) &&
+        !editForm.skills?.includes(skill)
+    );
+  }, [skillInput, editForm.skills]);
+
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState<"service" | "portfolio">(
+    "service"
+  );
+
+  const [services, setServices] = useState<Service[]>([
+    {
+      id: "1",
+      name: "Cleaning",
+      description:
+        "Professional cleaning services for homes and offices. We provide top-quality cleaning solutions with attention to detail.",
+      imageUrl: CleaningImage,
+    },
+    {
+      id: "2",
+      name: "Gardening",
+      description:
+        "Expert gardening services including lawn care, planting, and landscape design for beautiful outdoor spaces.",
+      imageUrl: CleaningImage,
+    },
+  ]);
+
+  const [portfolioItems, setPortfolioItems] = useState<Portfolio[]>([
+    {
+      id: "1",
+      title: "Garden Setup",
+      description:
+        "A beautiful garden setup for a luxury home in downtown area. Complete landscape transformation with sustainable plants.",
+      imageUrl: CleaningImage,
+    },
+    {
+      id: "2",
+      title: "Home Cleaning",
+      description:
+        "Complete home cleaning services for a 4000 sq ft property. Deep cleaning and organization included.",
+      imageUrl: CleaningImage,
+    },
+  ]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProfileImage(e.target.files[0]);
+    }
   };
 
-  const handleEditAddress = () => {
-    setEditAddress(profile.address);
-    setActiveModal("address");
+  const handleEditService = (service: Service) => {
+    console.log("Edit service:", service);
   };
 
-  const handleEditSecurity = () => {
-    setActiveModal("security");
+  const handleDeleteService = (id: string) => {
+    setServices(services.filter((service) => service.id !== id));
+  };
+
+  const handleEditPortfolio = (item: Portfolio) => {
+    console.log("Edit portfolio:", item);
+  };
+
+  const handleDeletePortfolio = (id: string) => {
+    setPortfolioItems(portfolioItems.filter((item) => item.id !== id));
+  };
+
+  const handleAddSkill = (skill: string) => {
+    if (skill && !editForm.skills?.includes(skill)) {
+      setEditForm((prev) => ({
+        ...prev,
+        skills: [...(prev.skills || []), skill],
+      }));
+      setSkillInput("");
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setEditForm((prev) => ({
+      ...prev,
+      skills: prev.skills?.filter((skill) => skill !== skillToRemove),
+    }));
   };
 
   const handleSaveProfile = () => {
-    setProfile({ ...profile, ...editForm });
-    setActiveModal(null);
-  };
-
-  const handleSaveAddress = () => {
-    setProfile({ ...profile, address: editAddress });
-    setActiveModal(null);
-  };
-
-  const handleSaveSecurity = () => {
-    // Handle password update logic here
+    setProfile(editForm);
     setActiveModal(null);
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-gray-50 flex-1 ml-16 md:ml-96">
-      <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Profile Picture Section */}
-        <div className="flex flex-col items-center py-6 bg-white rounded-lg shadow-sm">
-          <div className="relative">
-            <Image
-              src={CleaningImage}
-              alt="Profile"
-              className="w-24 h-24 rounded-full object-cover"
-            />
-            <button className="absolute bottom-0 right-0 bg-blue-500 p-2 rounded-full text-white shadow-lg hover:bg-blue-600">
-              <FiCamera className="h-5 w-5" />
-            </button>
+    <div className="w-full max-w-4xl mx-auto bg-gray-50 p-6">
+      {/* Profile Picture Section */}
+      <div className="flex flex-col items-center py-6 bg-white rounded-lg shadow-sm mb-6">
+        <div className="relative">
+          <Image
+            src={
+              profileImage
+                ? URL.createObjectURL(profileImage)
+                : profile.profilePictureUrl || CleaningImage
+            }
+            alt="Profile"
+            className="w-24 h-24 rounded-full object-cover"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+            id="profile-image-upload"
+          />
+          <label
+            htmlFor="profile-image-upload"
+            className="absolute bottom-0 right-0 bg-blue-500 p-2 rounded-full text-white shadow-lg hover:bg-blue-600 cursor-pointer"
+          >
+            <FiCamera className="h-5 w-5" />
+          </label>
+        </div>
+        <h2 className="mt-4 text-xl font-semibold">{profile.displayName}</h2>
+      </div>
+
+      {/* Profile Details Section */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Profile Details
+          </h2>
+          <button
+            onClick={() => setActiveModal("profile")}
+            className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+          >
+            Edit
+          </button>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center space-x-3">
+            <FiCamera className="h-5 w-5 text-gray-500" />
+            <span className="text-gray-700">{profile.displayName}</span>
           </div>
-          <h2 className="mt-4 text-xl font-semibold">{profile.name}</h2>
-          <p className="text-gray-500">{profile.email}</p>
+          <div className="flex items-center space-x-3">
+            <span className="text-gray-700">{profile.bio}</span>
+          </div>
+          <div className="flex items-center flex-wrap gap-2 mt-2">
+            <LiaToolsSolid className="h-5 w-5 text-gray-500" />
+            {profile.skills?.map((skill, index) => (
+              <span
+                key={index}
+                className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full flex items-center"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs for Service and Portfolio */}
+      <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
+        <div className="flex border-b">
+          <button
+            onClick={() => setActiveTab("service")}
+            className={`flex-1 text-center py-2 ${
+              activeTab === "service" ? "border-b-2 border-blue-500" : ""
+            }`}
+          >
+            Services
+          </button>
+          <button
+            onClick={() => setActiveTab("portfolio")}
+            className={`flex-1 text-center py-2 ${
+              activeTab === "portfolio" ? "border-b-2 border-blue-500" : ""
+            }`}
+          >
+            Portfolio
+          </button>
         </div>
 
-        {/* Personal Information */}
-        <ProfileSection title="Personal Information" onEdit={handleEditProfile}>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <FiUser className="h-5 w-5 text-gray-400" />
-              <span className="text-gray-600">{profile.name}</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <FiPhone className="h-5 w-5 text-gray-400" />
-              <span className="text-gray-600">{profile.phone}</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <FiMail className="h-5 w-5 text-gray-400" />
-              <span className="text-gray-600">{profile.email}</span>
-            </div>
+        {activeTab === "service" && (
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {services.map((service) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                onEdit={handleEditService}
+                onDelete={handleDeleteService}
+              />
+            ))}
           </div>
-        </ProfileSection>
+        )}
 
-        {/* Address */}
-        <ProfileSection title="Address" onEdit={handleEditAddress}>
-          <div className="flex items-start space-x-3">
-            <FiMapPin className="h-5 w-5 text-gray-400 mt-1" />
-            <div className="text-gray-600">
-              <p>{profile.address.street}</p>
-              <p>
-                {profile.address.city}, {profile.address.state}{" "}
-                {profile.address.zipCode}
-              </p>
-              <p>{profile.address.country}</p>
-            </div>
+        {activeTab === "portfolio" && (
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {portfolioItems.map((item) => (
+              <PortfolioCard
+                key={item.id}
+                item={item}
+                onEdit={handleEditPortfolio}
+                onDelete={handleDeletePortfolio}
+              />
+            ))}
           </div>
-        </ProfileSection>
-
-        {/* Security */}
-        <ProfileSection title="Security" onEdit={handleEditSecurity}>
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center space-x-3">
-              <FiLock className="h-5 w-5 text-gray-400" />
-              <span className="text-gray-600">Change Password</span>
-            </div>
-            <FiChevronRight className="h-5 w-5 text-gray-400" />
-          </div>
-        </ProfileSection>
+        )}
       </div>
 
       {/* Edit Profile Modal */}
       {activeModal === "profile" && (
-        <EditModal
-          title="Edit Profile"
-          onClose={() => setActiveModal(null)}
-          onSave={handleSaveProfile}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, name: e.target.value })
-                }
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={editForm.phone}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, phone: e.target.value })
-                }
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={editForm.email}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, email: e.target.value })
-                }
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-        </EditModal>
-      )}
-
-      {/* Edit Address Modal */}
-      {activeModal === "address" && (
-        <EditModal
-          title="Edit Address"
-          onClose={() => setActiveModal(null)}
-          onSave={handleSaveAddress}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Street
-              </label>
-              <input
-                type="text"
-                value={editAddress.street}
-                onChange={(e) =>
-                  setEditAddress({ ...editAddress, street: e.target.value })
-                }
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={editAddress.city}
-                  onChange={(e) =>
-                    setEditAddress({ ...editAddress, city: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
-                </label>
-                <input
-                  type="text"
-                  value={editAddress.state}
-                  onChange={(e) =>
-                    setEditAddress({ ...editAddress, state: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code
-                </label>
-                <input
-                  type="text"
-                  value={editAddress.zipCode}
-                  onChange={(e) =>
-                    setEditAddress({ ...editAddress, zipCode: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
-                <input
-                  type="text"
-                  value={editAddress.country}
-                  onChange={(e) =>
-                    setEditAddress({ ...editAddress, country: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-        </EditModal>
-      )}
-
-      {/* Security Modal */}
-      {activeModal === "security" && (
-        <EditModal
-          title="Change Password"
-          onClose={() => setActiveModal(null)}
-          onSave={handleSaveSecurity}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Current Password
-              </label>
-              <input
-                type="password"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                New Password
-              </label>
-              <input
-                type="password"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-        </EditModal>
+        <EditProfileModal
+          editForm={editForm}
+          setEditForm={setEditForm}
+          setActiveModal={setActiveModal}
+          allSkills={allSkills}
+          handleSaveProfile={handleSaveProfile}
+          handleRemoveSkill={handleRemoveSkill}
+          handleAddSkill={handleAddSkill}
+          skillInput={skillInput}
+          setSkillInput={setSkillInput}
+          filteredSkills={filteredSkills}
+        />
       )}
     </div>
   );
 };
 
-export default Page;
+export default ProfilePage;

@@ -15,10 +15,11 @@ const Page = () => {
     password: "",
   });
 
+  const router = useRouter();
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [rememberMe, setRememberMe] = useState(false);
 
   const validateField = (name: string, value: string) => {
     const newErrors: Errors = {};
@@ -36,8 +37,6 @@ const Page = () => {
       case "password":
         if (!value.trim()) {
           newErrors.password = "Password is required";
-        } else if (value.length < 8) {
-          newErrors.password = "Password must be at least 8 characters long";
         }
         break;
     }
@@ -65,6 +64,10 @@ const Page = () => {
     setErrors((prev) => ({ ...prev, ...fieldErrors }));
   };
 
+  const handleRememberMeChange = () => {
+    setRememberMe((prev) => !prev);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -89,7 +92,6 @@ const Page = () => {
     try {
       setLoading(true);
 
-      // Send login request to the backend
       const response = await fetch(apiRoutes.login, {
         method: "POST",
         headers: {
@@ -112,11 +114,14 @@ const Page = () => {
             email:
               "Please check your inbox to verify your email before logging in.",
           });
-          return; // Exit here so the catch block is not triggered
+          return;
         } else {
           setErrors({ email: data.error || "Failed to log in" });
         }
       } else {
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem("token", data.token);
+        storage.setItem("username", data.userName);
         router.push("/");
       }
     } catch (error) {
@@ -198,6 +203,8 @@ const Page = () => {
               type="checkbox"
               id="remember"
               name="remember"
+              checked={rememberMe}
+              onChange={handleRememberMeChange}
               className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label

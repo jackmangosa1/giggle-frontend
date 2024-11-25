@@ -46,20 +46,6 @@ const Page = () => {
           newErrors.password = "Password must be at least 8 characters long";
         } else if (value.length > 72) {
           newErrors.password = "Password must not exceed 72 characters";
-        } else if (!/[A-Z]/.test(value)) {
-          newErrors.password =
-            "Password must contain at least one uppercase letter";
-        } else if (!/[a-z]/.test(value)) {
-          newErrors.password =
-            "Password must contain at least one lowercase letter";
-        } else if (!/[0-9]/.test(value)) {
-          newErrors.password = "Password must contain at least one number";
-        } else if (
-          value.toLowerCase().includes(formData.username.toLowerCase())
-        ) {
-          newErrors.password = "Password cannot contain your username";
-        } else if (value.toLowerCase().includes("thumbtack")) {
-          newErrors.password = "Password cannot contain the word 'thumbtack'";
         }
         break;
 

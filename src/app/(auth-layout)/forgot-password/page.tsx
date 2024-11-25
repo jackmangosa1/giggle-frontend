@@ -14,6 +14,7 @@ const Page = () => {
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSending, SetIsSending] = useState(false);
 
   const validateField = (name: string, value: string) => {
     const newErrors: Errors = {};
@@ -62,6 +63,7 @@ const Page = () => {
     }
 
     try {
+      SetIsSending(true);
       const response = await fetch(apiRoutes.forgotPassword, {
         method: "POST",
         headers: {
@@ -74,7 +76,6 @@ const Page = () => {
       });
 
       if (response.ok) {
-        console.log("Reset password requested for:", formData.email);
         setIsSubmitted(true);
       } else {
         const errorData = await response.json();
@@ -125,7 +126,7 @@ const Page = () => {
                 type="submit"
                 className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none transition-colors"
               >
-                Send
+                {isSending ? "Sending..." : "Send"}
               </button>
 
               <div className="text-sm text-center text-gray-600">
