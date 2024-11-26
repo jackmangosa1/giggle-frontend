@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Input, Button, Upload, message } from "antd";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
+import apiRoutes from "../../../../../config/apiRoutes";
 
 const Page = () => {
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,7 @@ const Page = () => {
     price: "",
     description: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -23,13 +25,49 @@ const Page = () => {
     }));
   };
 
+  const handleImageUpload = (info: any) => {
+    if (info.file.status === "done") {
+      setImageUrl(info.file.response.url);
+    } else if (info.file.originFileObj) {
+      setImageFile(info.file.originFileObj);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      // Add your API call here to save the service
-      message.success("Service created successfully!");
+
+      const userId =
+        localStorage.getItem("userId") || sessionStorage.getItem("userId");
+      if (!userId) {
+        message.error("User not authenticated.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("name", form.title);
+      formData.append("price", form.price);
+      formData.append("description", form.description);
+      formData.append("categoryName", "default"); // Replace with the actual category if needed.
+      formData.append("priceType", "1"); // Replace with the actual price type.
+      if (imageFile) {
+        formData.append("imageFile", imageFile);
+      }
+
+      const response = await fetch(apiRoutes.createService, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        message.success("Service created successfully!");
+      } else {
+        const error = await response.json();
+        message.error(error.message || "Failed to create service.");
+      }
     } catch (error) {
-      message.error("Failed to create service");
+      console.error("Error submitting the form:", error);
+      message.error("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -53,12 +91,8 @@ const Page = () => {
             listType="picture-card"
             className="avatar-uploader"
             showUploadList={false}
-            action="/api/upload" // Add your upload endpoint
-            onChange={(info) => {
-              if (info.file.status === "done") {
-                setImageUrl(info.file.response.url);
-              }
-            }}
+            beforeUpload={() => false} // Prevent automatic upload
+            onChange={handleImageUpload}
           >
             {imageUrl ? (
               <img

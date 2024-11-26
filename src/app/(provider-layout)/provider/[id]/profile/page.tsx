@@ -12,10 +12,10 @@ import { LiaToolsSolid } from "react-icons/lia";
 import { MdWork } from "react-icons/md";
 import Image, { StaticImageData } from "next/image";
 import { AutoComplete, Button } from "antd";
-import CleaningImage from "../../../assets/cleaning.jpg";
-import PortfolioCard from "../../../components/ProviderPortfolioCard";
-import ServiceCard from "../../../components/ProviderServiceCard";
-import EditProfileModal from "../../../components/EditProviderProfileModal";
+import CleaningImage from "../../../../assets/cleaning.jpg";
+import PortfolioCard from "../../../../components/ProviderPortfolioCard";
+import ServiceCard from "../../../../components/ProviderServiceCard";
+import EditProfileModal from "../../../../components/EditProviderProfileModal";
 
 interface ProviderProfile {
   displayName?: string;

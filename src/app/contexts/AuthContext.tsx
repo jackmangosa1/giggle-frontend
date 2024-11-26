@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     "/forgot-password",
     "/search-result",
     "/profile",
-    "/provider/profile",
   ]; // Add more public routes here
 
   useEffect(() => {
@@ -50,6 +49,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsAuthenticated(false);
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    sessionStorage.removeItem("userId");
     router.push("/login");
   };
 

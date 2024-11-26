@@ -14,25 +14,27 @@ export default function CustomerLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const providerId =
+    localStorage.getItem("userId") || sessionStorage.getItem("userId");
   const providerMenuItems = [
     { id: "home", icon: <AiFillHome />, label: "Home", link: "/provider" },
     {
       id: "create",
       icon: <FaRegSquarePlus />,
       label: "Create",
-      link: "/provider/create",
+      link: `/provider/${providerId}/create`,
       subItems: [
         {
           id: "create-service",
           icon: <MdMiscellaneousServices />,
           label: "Service",
-          link: "/provider/create/service",
+          link: `/provider/${providerId}/create/service`,
         },
         {
           id: "create-portfolio",
           icon: <MdWorkOutline />,
           label: "Portfolio",
-          link: "/provider/create/portfolio",
+          link: `/provider/${providerId}/create/portfolio`,
         },
       ],
     },
@@ -40,20 +42,20 @@ export default function CustomerLayout({
       id: "messages",
       icon: <AiFillMessage />,
       label: "Messages",
-      link: "/provider/messages",
+      link: `/provider/${providerId}/messages`,
       notifications: 2,
     },
     {
       id: "notifications",
       icon: <AiFillHeart />,
       label: "Notifications",
-      link: "/provider/notifications",
+      link: `/provider/${providerId}/notifications`,
     },
     {
       id: "profile",
       icon: <AiOutlineUser />,
       label: "Profile",
-      link: "/provider/profile",
+      link: `/provider/${providerId}/profile`,
     },
   ];
 

@@ -121,6 +121,7 @@ const Page = () => {
       } else {
         const storage = rememberMe ? localStorage : sessionStorage;
         storage.setItem("token", data.token);
+        storage.setItem("userId", data.userId);
         storage.setItem("username", data.userName);
         router.push("/");
       }

@@ -1,5 +1,5 @@
 import React from "react";
-import { NotificationType, Notification } from "../../../types/types";
+import { NotificationType, Notification } from "../../../../types/types";
 import {
   FiCheckCircle,
   FiMessageCircle,
@@ -8,7 +8,7 @@ import {
   FiStar,
 } from "react-icons/fi";
 import { RxCross2 } from "react-icons/rx";
-import NotificationItem from "../../../components/NotificationItem";
+import NotificationItem from "../../../../components/NotificationItem";
 
 const notifications: Notification[] = [
   {
