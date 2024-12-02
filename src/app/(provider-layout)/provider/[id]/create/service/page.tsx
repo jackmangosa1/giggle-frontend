@@ -1,9 +1,11 @@
 "use client";
 import React, { useState } from "react";
-import { Input, Button, Upload, message } from "antd";
+import { Input, Button, Upload, message, Select } from "antd";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
 import apiRoutes from "../../../../../config/apiRoutes";
+
+const { Option } = Select;
 
 const Page = () => {
   const [loading, setLoading] = useState(false);
@@ -12,8 +14,16 @@ const Page = () => {
     title: "",
     price: "",
     description: "",
+    categoryName: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [categories, setCategories] = useState<string[]>([
+    "barber",
+    "cleaning",
+    "electrician",
+    "car repair",
+    "moving",
+  ]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -25,11 +35,24 @@ const Page = () => {
     }));
   };
 
+  const handleCategoryChange = (value: string) => {
+    if (!categories.includes(value)) {
+      setCategories((prev) => [...prev, value]);
+    }
+    setForm((prev) => ({
+      ...prev,
+      categoryName: value,
+    }));
+  };
+
+  const [imageFileName, setImageFileName] = useState<string | null>(null);
+
   const handleImageUpload = (info: any) => {
-    if (info.file.status === "done") {
-      setImageUrl(info.file.response.url);
-    } else if (info.file.originFileObj) {
-      setImageFile(info.file.originFileObj);
+    const file = info.file;
+    setImageFileName(file.name);
+
+    if (file.originFileObj) {
+      setImageFile(file.originFileObj);
     }
   };
 
@@ -48,8 +71,8 @@ const Page = () => {
       formData.append("name", form.title);
       formData.append("price", form.price);
       formData.append("description", form.description);
-      formData.append("categoryName", "default"); // Replace with the actual category if needed.
-      formData.append("priceType", "1"); // Replace with the actual price type.
+      formData.append("categoryName", form.categoryName);
+      formData.append("priceType", "1");
       if (imageFile) {
         formData.append("imageFile", imageFile);
       }
@@ -91,15 +114,13 @@ const Page = () => {
             listType="picture-card"
             className="avatar-uploader"
             showUploadList={false}
-            beforeUpload={() => false} // Prevent automatic upload
+            beforeUpload={() => false}
             onChange={handleImageUpload}
           >
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt="avatar"
-                className="w-full h-full object-cover"
-              />
+            {imageFileName ? (
+              <div className="text-center">
+                <p>{imageFileName}</p>
+              </div>
             ) : (
               uploadButton
             )}
@@ -115,6 +136,28 @@ const Page = () => {
             placeholder="Enter service title"
             className="w-full"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Category</label>
+          <Select
+            showSearch
+            style={{ width: "100%" }}
+            placeholder="Select or type category"
+            value={form.categoryName}
+            onChange={handleCategoryChange}
+            filterOption={(input, option) => {
+              const optionChildren =
+                (option?.children as unknown as string) || "";
+              return optionChildren.toLowerCase().includes(input.toLowerCase());
+            }}
+          >
+            {categories.map((category) => (
+              <Option key={category} value={category}>
+                {category}
+              </Option>
+            ))}
+          </Select>
         </div>
 
         <div>
