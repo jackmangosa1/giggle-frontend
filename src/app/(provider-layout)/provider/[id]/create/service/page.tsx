@@ -9,7 +9,6 @@ const { Option } = Select;
 
 const Page = () => {
   const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>();
   const [form, setForm] = useState({
     title: "",
     price: "",
@@ -49,11 +48,8 @@ const Page = () => {
 
   const handleImageUpload = (info: any) => {
     const file = info.file;
+    setImageFile(file);
     setImageFileName(file.name);
-
-    if (file.originFileObj) {
-      setImageFile(file.originFileObj);
-    }
   };
 
   const handleSubmit = async () => {
@@ -66,17 +62,26 @@ const Page = () => {
         message.error("User not authenticated.");
         return;
       }
-
-      const formData = new FormData();
-      formData.append("name", form.title);
-      formData.append("price", form.price);
-      formData.append("description", form.description);
-      formData.append("categoryName", form.categoryName);
-      formData.append("priceType", "1");
-      if (imageFile) {
-        formData.append("imageFile", imageFile);
+      if (
+        !form.title ||
+        !form.price ||
+        !form.categoryName ||
+        !form.description
+      ) {
+        message.error("Please fill in all required fields.");
+        return;
       }
 
+      const formData = new FormData();
+      formData.append("Name", form.title);
+      formData.append("Price", form.price);
+      formData.append("Description", form.description);
+      formData.append("CategoryName", form.categoryName);
+      formData.append("PriceType", "1");
+
+      if (imageFile) {
+        formData.append("ImageFile", imageFile, imageFile.name);
+      }
       const response = await fetch(apiRoutes.createService, {
         method: "POST",
         body: formData,
@@ -84,9 +89,18 @@ const Page = () => {
 
       if (response.ok) {
         message.success("Service created successfully!");
+        setForm({
+          title: "",
+          price: "",
+          description: "",
+          categoryName: "",
+        });
+        setImageFile(null);
+        setImageFileName(null);
       } else {
-        const error = await response.json();
-        message.error(error.message || "Failed to create service.");
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        message.error(errorText || "Failed to create service.");
       }
     } catch (error) {
       console.error("Error submitting the form:", error);
@@ -114,8 +128,11 @@ const Page = () => {
             listType="picture-card"
             className="avatar-uploader"
             showUploadList={false}
-            beforeUpload={() => false}
-            onChange={handleImageUpload}
+            beforeUpload={(file) => {
+              setImageFile(file);
+              setImageFileName(file.name);
+              return false;
+            }}
           >
             {imageFileName ? (
               <div className="text-center">
