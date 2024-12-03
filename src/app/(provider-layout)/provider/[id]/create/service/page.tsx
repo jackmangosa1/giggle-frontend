@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input, Button, Upload, message, Select } from "antd";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
@@ -16,13 +16,32 @@ const Page = () => {
     categoryName: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [categories, setCategories] = useState<string[]>([
-    "barber",
-    "cleaning",
-    "electrician",
-    "car repair",
-    "moving",
-  ]);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(apiRoutes.getProviderProfile);
+        if (response.ok) {
+          const data = await response.json();
+          const categories = data.services.map(
+            (service: { categoryName: string }) => service.categoryName
+          );
+
+          setCategories(categories);
+        } else {
+          message.error("Failed to fetch categories.");
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        message.error(
+          "An unexpected error occurred while fetching categories."
+        );
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -35,21 +54,10 @@ const Page = () => {
   };
 
   const handleCategoryChange = (value: string) => {
-    if (!categories.includes(value)) {
-      setCategories((prev) => [...prev, value]);
-    }
     setForm((prev) => ({
       ...prev,
       categoryName: value,
     }));
-  };
-
-  const [imageFileName, setImageFileName] = useState<string | null>(null);
-
-  const handleImageUpload = (info: any) => {
-    const file = info.file;
-    setImageFile(file);
-    setImageFileName(file.name);
   };
 
   const handleSubmit = async () => {
@@ -96,7 +104,6 @@ const Page = () => {
           categoryName: "",
         });
         setImageFile(null);
-        setImageFileName(null);
       } else {
         const errorText = await response.text();
         console.error("Error response:", errorText);
@@ -130,13 +137,12 @@ const Page = () => {
             showUploadList={false}
             beforeUpload={(file) => {
               setImageFile(file);
-              setImageFileName(file.name);
               return false;
             }}
           >
-            {imageFileName ? (
+            {imageFile ? (
               <div className="text-center">
-                <p>{imageFileName}</p>
+                <p>{imageFile.name}</p>
               </div>
             ) : (
               uploadButton
@@ -160,14 +166,9 @@ const Page = () => {
           <Select
             showSearch
             style={{ width: "100%" }}
-            placeholder="Select or type category"
+            placeholder="Select a category"
             value={form.categoryName}
             onChange={handleCategoryChange}
-            filterOption={(input, option) => {
-              const optionChildren =
-                (option?.children as unknown as string) || "";
-              return optionChildren.toLowerCase().includes(input.toLowerCase());
-            }}
           >
             {categories.map((category) => (
               <Option key={category} value={category}>
