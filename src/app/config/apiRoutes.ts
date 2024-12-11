@@ -9,7 +9,13 @@ const apiRoutes = {
   forgotPassword: `${API_BASE_URL}/api/auth/ForgotPassword`,
   resetPassword: `${API_BASE_URL}/api/auth/ResetPassword`,
   createService: `${API_BASE_URL}/api/providers/${userId}/services`,
+  updateService: `${API_BASE_URL}/api/providers/${userId}/services`,
+  deleteService: `${API_BASE_URL}/api/providers/${userId}/services`,
   getProviderProfile: `${API_BASE_URL}/api/providers/profile/${userId}`,
+  updateProviderProfile: `${API_BASE_URL}/api/providers/profile/${userId}`,
+  getService: `${API_BASE_URL}/api/providers/services`,
+  getServiceCategories: `${API_BASE_URL}/api/providers/services/categories`,
+  getSkills: `${API_BASE_URL}/api/providers/services/skills`,
 };
 
 export default apiRoutes;

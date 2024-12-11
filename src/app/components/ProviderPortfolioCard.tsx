@@ -1,32 +1,27 @@
 import Image, { StaticImageData} from "next/image";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
-
+import { CompletedService } from "../(provider-layout)/provider/[id]/profile/page";
 
 
   
-  interface Portfolio {
-    id: string;
-    title: string;
-    description: string;
-    imageUrl: StaticImageData;
-  }
+  
    
 const PortfolioCard = ({
     item,
     onEdit,
     onDelete,
   }: {
-    item: Portfolio;
-    onEdit: (item: Portfolio) => void;
-    onDelete: (id: string) => void;
+    item: CompletedService;
+    onEdit: (item: CompletedService) => void;
+    onDelete: (id: number) => void;
   }) => {
     return (
       <div className="group bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
         <div className="relative">
           <div className="relative h-48 w-full">
             <Image
-              src={item.imageUrl}
-              alt={item.title}
+              src={item.mediaUrl ?? ''}
+              alt={`portfolio item ${item.id}`}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               fill
             />

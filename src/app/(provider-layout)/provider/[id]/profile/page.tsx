@@ -1,119 +1,179 @@
 "use client";
-import React, { useMemo, useState } from "react";
-import {
-  FiCamera,
-  FiEdit2,
-  FiTrash2,
-  FiExternalLink,
-  FiChevronLeft,
-  FiX,
-} from "react-icons/fi";
+import React, { useEffect, useMemo, useState } from "react";
+import { FiCamera } from "react-icons/fi";
 import { LiaToolsSolid } from "react-icons/lia";
-import { MdWork } from "react-icons/md";
-import Image, { StaticImageData } from "next/image";
-import { AutoComplete, Button } from "antd";
-import CleaningImage from "../../../../assets/cleaning.jpg";
+import Image from "next/image";
+import { message, Modal } from "antd";
+import DefaultProfileImage from "../../../../assets/cleaning.jpg";
 import PortfolioCard from "../../../../components/ProviderPortfolioCard";
 import ServiceCard from "../../../../components/ProviderServiceCard";
 import EditProfileModal from "../../../../components/EditProviderProfileModal";
+import apiRoutes from "@/app/config/apiRoutes";
+import { useRouter } from "next/navigation";
 
+export enum PriceType {
+  fixed = 1,
+}
 interface ProviderProfile {
-  displayName?: string;
-  bio?: string;
-  skills?: string[];
-  profilePictureUrl?: StaticImageData;
+  id: number;
+  displayName: string;
+  bio: string;
+  skills: string[];
+  profilePictureUrl?: string;
+  userName: string;
+  email: string;
 }
 
-interface Service {
-  id: string;
+export interface Service {
+  id: number;
   name: string;
   description: string;
-  imageUrl: StaticImageData;
+  mediaUrl?: string;
+  categoryName: string;
+  price: number;
+  priceType: PriceType;
 }
 
-interface Portfolio {
-  id: string;
+export interface CompletedService {
+  id: number;
   title: string;
   description: string;
-  imageUrl: StaticImageData;
+  mediaUrl?: string;
+  completedAt: string;
+  reviews: Review[];
+}
+
+interface Review {
+  id: number;
+  userId: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  userName: string;
+}
+
+interface Skill {
+  id: number;
+  name: string;
 }
 
 const ProfilePage = () => {
+  const router = useRouter();
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [skillInput, setSkillInput] = useState<string>("");
-  const [focused, setFocused] = useState(false);
-  const [allSkills] = useState<string[]>([
-    "Cleaning",
-    "Gardening",
-    "Plumbing",
-    "Electrical",
-    "Painting",
-    "Landscaping",
-    "Home Repair",
-    "Carpentry",
-    "HVAC",
-    "Roofing",
-  ]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [allSkills, setAllSkills] = useState<Skill[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const userId =
+    localStorage.getItem("userId") || sessionStorage.getItem("userId");
 
   const [profile, setProfile] = useState<ProviderProfile>({
-    displayName: "John Doe",
-    bio: "Experienced service provider with expertise in multiple areas",
-    skills: ["Cleaning", "Gardening"],
-    profilePictureUrl: CleaningImage,
+    id: 0,
+    displayName: "",
+    bio: "",
+    skills: [],
+    userName: "",
+    email: "",
   });
 
-  const [editForm, setEditForm] = useState<ProviderProfile>({
-    displayName: profile.displayName,
-    bio: profile.bio,
-    skills: profile.skills,
-  });
+  const [services, setServices] = useState<Service[]>([]);
+  const [completedServices, setCompletedServices] = useState<
+    CompletedService[]
+  >([]);
 
-  const filteredSkills = useMemo(() => {
-    return allSkills.filter(
-      (skill) =>
-        skill.toLowerCase().includes(skillInput.toLowerCase()) &&
-        !editForm.skills?.includes(skill)
-    );
-  }, [skillInput, editForm.skills]);
+  const [editForm, setEditForm] = useState<Partial<ProviderProfile>>({
+    displayName: "",
+    bio: "",
+    skills: [],
+  });
 
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<"service" | "portfolio">(
     "service"
   );
 
-  const [services, setServices] = useState<Service[]>([
-    {
-      id: "1",
-      name: "Cleaning",
-      description:
-        "Professional cleaning services for homes and offices. We provide top-quality cleaning solutions with attention to detail.",
-      imageUrl: CleaningImage,
-    },
-    {
-      id: "2",
-      name: "Gardening",
-      description:
-        "Expert gardening services including lawn care, planting, and landscape design for beautiful outdoor spaces.",
-      imageUrl: CleaningImage,
-    },
-  ]);
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const response = await fetch(apiRoutes.getSkills, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
-  const [portfolioItems, setPortfolioItems] = useState<Portfolio[]>([
-    {
-      id: "1",
-      title: "Garden Setup",
-      description:
-        "A beautiful garden setup for a luxury home in downtown area. Complete landscape transformation with sustainable plants.",
-      imageUrl: CleaningImage,
-    },
-    {
-      id: "2",
-      title: "Home Cleaning",
-      description:
-        "Complete home cleaning services for a 4000 sq ft property. Deep cleaning and organization included.",
-      imageUrl: CleaningImage,
-    },
-  ]);
+        if (!response.ok) {
+          throw new Error("Failed to fetch skills");
+        }
+
+        const data = await response.json();
+        setAllSkills(data || []); // Update allSkills with the response data
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
+      }
+    };
+
+    fetchSkills();
+  }, []);
+
+  const filteredSkills = useMemo(() => {
+    return allSkills.filter(
+      (skill) =>
+        skill.name.toLowerCase().includes(skillInput.toLowerCase()) &&
+        !editForm.skills?.includes(skill.name)
+    );
+  }, [skillInput, editForm.skills]);
+
+  useEffect(() => {
+    const fetchProviderProfile = async () => {
+      try {
+        const response = await fetch(apiRoutes.getProviderProfile, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            // Add authentication headers if required
+            // 'Authorization': `Bearer ${token}`
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch provider profile");
+        }
+
+        const data = await response.json();
+
+        setProfile({
+          id: data.id,
+          displayName: data.displayName,
+          bio: data.bio,
+          skills: data.skills,
+          profilePictureUrl: data.profilePictureUrl,
+          userName: data.userName,
+          email: data.email,
+        });
+
+        setServices(data.services || []);
+        setCompletedServices(data.completedServices || []);
+
+        setEditForm({
+          displayName: data.displayName,
+          bio: data.bio,
+          skills: data.skills,
+        });
+
+        setIsLoading(false);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
+        setIsLoading(false);
+      }
+    };
+
+    fetchProviderProfile();
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -121,20 +181,84 @@ const ProfilePage = () => {
     }
   };
 
+  const handleSaveProfile = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("DisplayName", editForm.displayName || "");
+      formData.append("Bio", editForm.bio || "");
+
+      editForm.skills?.forEach((skill, index) => {
+        formData.append(`SkillNames[${index}]`, skill);
+      });
+
+      if (profileImage) {
+        formData.append("imageFile", profileImage);
+      }
+
+      const response = await fetch(apiRoutes.updateProviderProfile, {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update profile. Status: ${response.status}`);
+      }
+
+      const updatedProfile = await response.json();
+      setProfile((prev) => ({
+        ...prev,
+        ...updatedProfile,
+        profilePictureUrl: profileImage
+          ? URL.createObjectURL(profileImage)
+          : prev.profilePictureUrl,
+      }));
+
+      setActiveModal(null);
+    } catch (err) {
+      console.error("Profile update failed:", err);
+    }
+  };
+
   const handleEditService = (service: Service) => {
-    console.log("Edit service:", service);
+    router.push(
+      `/provider/${userId}/create/service?id=${service.id.toString()}`
+    );
   };
 
-  const handleDeleteService = (id: string) => {
-    setServices(services.filter((service) => service.id !== id));
+  const handleDeleteService = async (id: number) => {
+    Modal.confirm({
+      title: "Are you sure?",
+      icon: null,
+      content:
+        "Do you really want to delete this service? This action cannot be undone.",
+      okText: "Yes, Delete",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          const response = await fetch(`${apiRoutes.deleteService}/${id}`, {
+            method: "DELETE",
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to delete service");
+          }
+
+          setServices(services.filter((service) => service.id !== id));
+          message.success("Service deleted successfully.");
+        } catch (err) {
+          console.error("Service deletion failed:", err);
+          message.error("Failed to delete service.");
+        }
+      },
+    });
   };
 
-  const handleEditPortfolio = (item: Portfolio) => {
+  const handleEditPortfolio = (item: CompletedService) => {
     console.log("Edit portfolio:", item);
   };
 
-  const handleDeletePortfolio = (id: string) => {
-    setPortfolioItems(portfolioItems.filter((item) => item.id !== id));
+  const handleDeletePortfolio = (id: number) => {
+    setCompletedServices(completedServices.filter((item) => item.id !== id));
   };
 
   const handleAddSkill = (skill: string) => {
@@ -154,23 +278,27 @@ const ProfilePage = () => {
     }));
   };
 
-  const handleSaveProfile = () => {
-    setProfile(editForm);
-    setActiveModal(null);
-  };
+  if (isLoading) {
+    return <div className="text-center py-10">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center text-red-500 py-10">Error: {error}</div>;
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-gray-50 p-6">
-      {/* Profile Picture Section */}
       <div className="flex flex-col items-center py-6 bg-white rounded-lg shadow-sm mb-6">
         <div className="relative">
           <Image
             src={
               profileImage
                 ? URL.createObjectURL(profileImage)
-                : profile.profilePictureUrl || CleaningImage
+                : profile.profilePictureUrl || DefaultProfileImage
             }
             alt="Profile"
+            width={96}
+            height={96}
             className="w-24 h-24 rounded-full object-cover"
           />
           <input
@@ -190,7 +318,6 @@ const ProfilePage = () => {
         <h2 className="mt-4 text-xl font-semibold">{profile.displayName}</h2>
       </div>
 
-      {/* Profile Details Section */}
       <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -225,7 +352,6 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Tabs for Service and Portfolio */}
       <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
         <div className="flex border-b">
           <button
@@ -261,7 +387,7 @@ const ProfilePage = () => {
 
         {activeTab === "portfolio" && (
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {portfolioItems.map((item) => (
+            {completedServices.map((item) => (
               <PortfolioCard
                 key={item.id}
                 item={item}
@@ -273,19 +399,18 @@ const ProfilePage = () => {
         )}
       </div>
 
-      {/* Edit Profile Modal */}
       {activeModal === "profile" && (
         <EditProfileModal
           editForm={editForm}
           setEditForm={setEditForm}
           setActiveModal={setActiveModal}
-          allSkills={allSkills}
+          allSkills={allSkills.map((skill: Skill) => skill.name)}
           handleSaveProfile={handleSaveProfile}
           handleRemoveSkill={handleRemoveSkill}
           handleAddSkill={handleAddSkill}
           skillInput={skillInput}
           setSkillInput={setSkillInput}
-          filteredSkills={filteredSkills}
+          filteredSkills={filteredSkills.map((skill: Skill) => skill.name)}
         />
       )}
     </div>

@@ -2,7 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // Add any other configuration options you need here
+  images: {
+    domains: ["servicemanagementapp.blob.core.windows.net"],
+  },
 };
 
 module.exports = nextConfig;
