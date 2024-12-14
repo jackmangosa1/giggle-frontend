@@ -192,14 +192,17 @@ const Page = () => {
             }}
           >
             {imageFile ? (
-              <div className="text-center">
-                <p>{imageFile.name}</p>
+              <div
+                className="text-center truncate w-full"
+                style={{ maxWidth: "100%" }}
+              >
+                <p className="truncate">{imageFile.name}</p>
               </div>
             ) : existingImageUrl ? (
               <img
                 src={existingImageUrl}
                 alt="Service"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-lg"
               />
             ) : (
               uploadButton

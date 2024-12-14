@@ -10,52 +10,12 @@ import ServiceCard from "../../../../components/ProviderServiceCard";
 import EditProfileModal from "../../../../components/EditProviderProfileModal";
 import apiRoutes from "@/app/config/apiRoutes";
 import { useRouter } from "next/navigation";
-
-export enum PriceType {
-  fixed = 1,
-}
-interface ProviderProfile {
-  id: number;
-  displayName: string;
-  bio: string;
-  skills: string[];
-  profilePictureUrl?: string;
-  userName: string;
-  email: string;
-}
-
-export interface Service {
-  id: number;
-  name: string;
-  description: string;
-  mediaUrl?: string;
-  categoryName: string;
-  price: number;
-  priceType: PriceType;
-}
-
-export interface CompletedService {
-  id: number;
-  title: string;
-  description: string;
-  mediaUrl?: string;
-  completedAt: string;
-  reviews: Review[];
-}
-
-interface Review {
-  id: number;
-  userId: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-  userName: string;
-}
-
-interface Skill {
-  id: number;
-  name: string;
-}
+import {
+  CompletedService,
+  ProviderProfile,
+  Service,
+  Skill,
+} from "@/app/types/types";
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -107,7 +67,7 @@ const ProfilePage = () => {
         }
 
         const data = await response.json();
-        setAllSkills(data || []); // Update allSkills with the response data
+        setAllSkills(data || []);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "An unknown error occurred"
