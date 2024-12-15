@@ -14,7 +14,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Define routes that do not require authentication
   const publicRoutes = [
     "/",
     "/login",
@@ -24,7 +23,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     "/forgot-password",
     "/search-result",
     "/profile",
-  ]; // Add more public routes here
+  ];
 
   useEffect(() => {
     const token =
@@ -33,13 +32,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (token) {
       setIsAuthenticated(true);
       if (pathname === "/login") {
-        // Redirect logged-in users away from the login page
         router.push("/");
       }
     } else {
       setIsAuthenticated(false);
       if (!publicRoutes.includes(pathname)) {
-        // Redirect unauthenticated users trying to access protected routes
         router.push("/login");
       }
     }
@@ -47,10 +44,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    sessionStorage.removeItem("userId");
+
+    const storage = localStorage.getItem("token")
+      ? localStorage
+      : sessionStorage;
+
+    storage.removeItem("token");
+    storage.removeItem("userId");
+    storage.removeItem("username");
+
     router.push("/login");
   };
 
