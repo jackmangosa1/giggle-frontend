@@ -44,12 +44,19 @@ const Hero = () => {
   ];
 
   const handleSearch = () => {
-    router.push("/search-result");
+    if (searchQuery.trim()) {
+      router.push(`/search-result?query=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
   };
 
   return (
     <section className="relative overflow-hidden bg-white">
-      {/* Enhanced Background Pattern */}
       <div
         className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white"
         aria-hidden="true"
@@ -59,9 +66,7 @@ const Hero = () => {
 
       <div className="relative px-4 py-12 mx-auto max-w-7xl sm:px-6 md:px-8 lg:py-20">
         <div className="flex flex-col-reverse gap-12 md:flex-row">
-          {/* Left Column - Text Content */}
           <div className="flex flex-col space-y-8 md:w-1/2">
-            {/* Enhanced Trust Badge */}
             <div className="group flex items-center px-3 py-1.5 space-x-2 text-sm bg-blue-50/80 hover:bg-blue-50 rounded-full w-fit transition-all duration-300 border border-blue-100/50">
               <MdVerified className="flex items-center justify-center w-5 h-5 text-blue-500 rounded-full transform group-hover:scale-110 transition-transform duration-300" />
               <span className="text-blue-800 font-medium">
@@ -69,7 +74,6 @@ const Hero = () => {
               </span>
             </div>
 
-            {/* Enhanced Heading */}
             <div className="space-y-2">
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 lg:text-5xl">
                 Book Expert Services,
@@ -83,7 +87,6 @@ const Hero = () => {
               </p>
             </div>
 
-            {/* Enhanced Search Box */}
             <div className="relative group">
               <div
                 className={`absolute inset-0 bg-blue-100 rounded-lg opacity-0 transition-opacity duration-300 -z-10 ${
@@ -93,11 +96,12 @@ const Hero = () => {
               <input
                 type="text"
                 value={searchQuery}
+                onKeyDown={handleKeyPress}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
                 placeholder="What service do you need?"
-                className="w-full px-4 py-4 text-gray-900 placeholder-gray-500 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-300"
+                className="w-full px-4 py-4 text-gray-900 placeholder-gray-500 bg-white border border-gray-200 rounded-lg focus:outline-none"
               />
               <button
                 onClick={handleSearch}
@@ -108,7 +112,6 @@ const Hero = () => {
               </button>
             </div>
 
-            {/* Enhanced Stats Grid */}
             <div className="grid grid-cols-3 gap-8">
               {stats.map((stat, index) => (
                 <div
@@ -126,10 +129,8 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Enhanced Right Side - Image Carousel */}
           <div className="w-full md:w-1/2">
             <div className="relative max-w-xl mx-auto">
-              {/* Decorative Elements */}
               <div className="absolute -top-4 -right-4 w-32 h-32 bg-blue-100/30 rounded-full blur-2xl" />
               <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-blue-100/30 rounded-full blur-2xl" />
 

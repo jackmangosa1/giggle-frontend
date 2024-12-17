@@ -12,10 +12,12 @@ const apiRoutes = {
   updateService: `${API_BASE_URL}/api/providers/${userId}/services`,
   deleteService: `${API_BASE_URL}/api/providers/${userId}/services`,
   getProviderProfile: `${API_BASE_URL}/api/providers/profile/${userId}`,
+  getPublicProviderProfile: `${API_BASE_URL}/api/providers/profile`,
   updateProviderProfile: `${API_BASE_URL}/api/providers/profile/${userId}`,
   getService: `${API_BASE_URL}/api/providers/services`,
   getServiceCategories: `${API_BASE_URL}/api/providers/services/categories`,
   getSkills: `${API_BASE_URL}/api/providers/services/skills`,
+  getProviders: `${API_BASE_URL}/api/customers/search-providers`,
 };
 
 export default apiRoutes;

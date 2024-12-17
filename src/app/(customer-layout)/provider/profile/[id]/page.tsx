@@ -6,9 +6,10 @@ import Image from "next/image";
 import { Modal, Button, DatePicker, TimePicker, Rate, Input } from "antd";
 import apiRoutes from "@/app/config/apiRoutes";
 import { Service } from "@/app/types/types";
-
+import { useParams } from "next/navigation";
 
 const ServiceProviderProfile: React.FC = () => {
+  const { id } = useParams();
   const [providerData, setProviderData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"services" | "portfolio">(
     "services"
@@ -24,9 +25,15 @@ const ServiceProviderProfile: React.FC = () => {
   useEffect(() => {
     const fetchProviderData = async () => {
       try {
-        const response = await fetch(apiRoutes.getProviderProfile);
+        const response = await fetch(
+          `${apiRoutes.getPublicProviderProfile}/${id}`
+        );
         const data = await response.json();
-        setProviderData(data);
+        setProviderData({
+          ...data,
+          skills: data.skills || [],
+          services: data.services || [],
+        });
       } catch (error) {
         console.error("Failed to fetch provider data:", error);
       }
@@ -162,7 +169,7 @@ const ServiceProviderProfile: React.FC = () => {
               >
                 <div className="relative group overflow-hidden">
                   <Image
-                    src={service.mediaUrl ?? ''}
+                    src={service.mediaUrl ?? ""}
                     alt={service.name}
                     width={300}
                     height={160}
@@ -190,7 +197,7 @@ const ServiceProviderProfile: React.FC = () => {
           {selectedService && (
             <div className="space-y-4">
               <Image
-                src={selectedService.mediaUrl ?? ''}
+                src={selectedService.mediaUrl ?? ""}
                 alt={selectedService.name}
                 width={600}
                 height={240}
