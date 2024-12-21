@@ -21,6 +21,8 @@ const ServiceProviderProfile: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<any>(null);
   const [selectedTime, setSelectedTime] = useState<any>(null);
   const [newReview, setNewReview] = useState({ rating: 0, comment: "" });
+  const userId =
+    localStorage.getItem("userId") || sessionStorage.getItem("userId");
 
   useEffect(() => {
     const fetchProviderData = async () => {
@@ -69,13 +71,53 @@ const ServiceProviderProfile: React.FC = () => {
     setSelectedTime(time);
   };
 
-  const handleConfirmRequest = () => {
-    closeDateTimeModal();
-    console.log("Booking confirmed:", {
-      service: selectedService,
-      date: selectedDate,
-      time: selectedTime,
-    });
+  const handleConfirmRequest = async () => {
+    if (!selectedService || !selectedDate || !selectedTime) {
+      Modal.error({
+        title: "Booking Error",
+        content: "Please select a service, date, and time.",
+      });
+      return;
+    }
+
+    try {
+      const bookingData = {
+        customerId: userId,
+        serviceId: selectedService.id,
+        date: selectedDate.format("YYYY-MM-DD"), 
+        time: selectedTime.format("HH:mm"), 
+      };
+
+      const response = await fetch(apiRoutes.createBooking, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Add authorization header if required
+          // 'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Booking failed");
+      }
+
+      Modal.success({
+        title: "Booking Confirmed",
+        content: `Your booking for ${selectedService.name} has been submitted.`,
+      });
+
+      closeDateTimeModal();
+      setSelectedService(null);
+      setSelectedDate(null);
+      setSelectedTime(null);
+    } catch (error) {
+      console.error("Booking error:", error);
+      Modal.error({
+        title: "Booking Failed",
+        content: "Unable to complete your booking. Please try again.",
+      });
+    }
   };
 
   if (!providerData) {

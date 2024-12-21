@@ -18,6 +18,7 @@ const apiRoutes = {
   getServiceCategories: `${API_BASE_URL}/api/providers/services/categories`,
   getSkills: `${API_BASE_URL}/api/providers/services/skills`,
   getProviders: `${API_BASE_URL}/api/customers/search-providers`,
+  createBooking: `${API_BASE_URL}/api/customers/bookings`,
 };
 
 export default apiRoutes;
