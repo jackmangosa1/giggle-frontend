@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import { Table, Button, Badge, Card, Select } from "antd";
+import React, { useState, useEffect } from "react";
+import { Table, Button, Badge, Card, Select, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   LineChart,
@@ -18,17 +18,35 @@ import {
   AiFillDollarCircle,
   AiOutlineArrowUp,
   AiOutlineArrowDown,
+  AiOutlineCheckCircle,
 } from "react-icons/ai";
+import apiRoutes from "@/app/config/apiRoutes";
 
-// Types
+enum BookingStatus {
+  Pending,
+  Approved,
+  Rejected,
+  Completed,
+  Confirmed,
+}
+
+const StatusMap = {
+  [BookingStatus.Pending]: "Pending",
+  [BookingStatus.Approved]: "Approved",
+  [BookingStatus.Rejected]: "Rejected",
+  [BookingStatus.Completed]: "Completed",
+  [BookingStatus.Confirmed]: "Confirmed",
+} as const;
+
 interface Booking {
-  id: string;
+  bookingId: number;
   customerName: string;
-  service: string;
+  serviceName: string;
+  price: number;
   date: string;
   time: string;
-  price: number;
-  status: "pending" | "approved" | "rejected";
+  paymentStatus: string;
+  bookingStatus: string | BookingStatus;
 }
 
 interface RevenueData {
@@ -37,7 +55,6 @@ interface RevenueData {
   bookings: number;
 }
 
-// Sample Data
 const revenueData: RevenueData[] = [
   { date: "2024-01", revenue: 4000, bookings: 24 },
   { date: "2024-02", revenue: 5500, bookings: 32 },
@@ -47,37 +64,170 @@ const revenueData: RevenueData[] = [
   { date: "2024-06", revenue: 7000, bookings: 40 },
 ];
 
-const bookingsData: Booking[] = [
-  {
-    id: "1",
-    customerName: "John Doe",
-    service: "Hair Cut",
-    date: "2024-03-15",
-    time: "10:00 AM",
-    price: 50,
-    status: "pending",
-  },
-  // Add more sample bookings as needed
-];
+const getBookingStatusEnum = (
+  status: string | BookingStatus
+): BookingStatus => {
+  if (typeof status === "number") {
+    return status;
+  }
+  return BookingStatus[status as keyof typeof BookingStatus];
+};
 
 const Page: React.FC = () => {
   const [timeRange, setTimeRange] = useState<string>("6m");
-  const [bookings, setBookings] = useState<Booking[]>(bookingsData);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingBookingId, setUpdatingBookingId] = useState<number | null>(
+    null
+  );
 
-  // Handle booking status change
-  const handleStatusChange = (
-    bookingId: string,
-    newStatus: "approved" | "rejected"
-  ) => {
-    setBookings(
-      bookings.map((booking) =>
-        booking.id === bookingId ? { ...booking, status: newStatus } : booking
-      )
-    );
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(apiRoutes.getAllBookings);
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setBookings(Array.isArray(data) ? data : [data]);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      setError("Failed to fetch bookings");
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Table columns configuration
+  const handleStatusChange = async (
+    bookingId: number,
+    newStatus: BookingStatus
+  ) => {
+    try {
+      setUpdatingBookingId(bookingId);
+      const response = await fetch(
+        `${apiRoutes.updateBookingStatus}/${bookingId}/status`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newStatus),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update booking status");
+      }
+
+      setBookings((prevBookings) =>
+        prevBookings.map((booking) =>
+          booking.bookingId === bookingId
+            ? { ...booking, bookingStatus: StatusMap[newStatus] }
+            : booking
+        )
+      );
+
+      message.success(`Booking status updated to ${StatusMap[newStatus]}`);
+      await fetchBookings();
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update booking status"
+      );
+      await fetchBookings();
+    } finally {
+      setUpdatingBookingId(null);
+    }
+  };
+
+  type BadgeStatus = "processing" | "success" | "error" | "default" | "warning";
+  const getBadgeStatus = (status: BookingStatus): BadgeStatus => {
+    switch (status) {
+      case BookingStatus.Pending:
+        return "processing";
+      case BookingStatus.Approved:
+        return "success";
+      case BookingStatus.Rejected:
+        return "error";
+      case BookingStatus.Completed:
+        return "success";
+      case BookingStatus.Confirmed:
+        return "processing";
+      default:
+        return "default";
+    }
+  };
+
+  const renderStatusActions = (booking: Booking) => {
+    const { bookingId, bookingStatus } = booking;
+    const isUpdating = updatingBookingId === bookingId;
+
+    const enumStatus = getBookingStatusEnum(bookingStatus);
+
+    switch (StatusMap[enumStatus]) {
+      case StatusMap[BookingStatus.Pending]:
+        return (
+          <div className="flex gap-2">
+            <Button
+              type="primary"
+              icon={<AiOutlineCheck />}
+              onClick={() =>
+                handleStatusChange(bookingId, BookingStatus.Approved)
+              }
+              loading={isUpdating}
+              disabled={isUpdating}
+              className="bg-green-500 hover:bg-green-600"
+            >
+              Approve
+            </Button>
+            <Button
+              danger
+              icon={<AiOutlineClose />}
+              onClick={() =>
+                handleStatusChange(bookingId, BookingStatus.Rejected)
+              }
+              loading={isUpdating}
+              disabled={isUpdating}
+            >
+              Reject
+            </Button>
+          </div>
+        );
+      case StatusMap[BookingStatus.Approved]:
+        return (
+          <Button
+            type="primary"
+            icon={<AiOutlineCheckCircle />}
+            onClick={() =>
+              handleStatusChange(bookingId, BookingStatus.Completed)
+            }
+            loading={isUpdating}
+            disabled={isUpdating}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            Complete
+          </Button>
+        );
+      case StatusMap[BookingStatus.Rejected]:
+        return null;
+      default:
+        return null;
+    }
+  };
+
   const columns: ColumnsType<Booking> = [
+    {
+      title: "ID",
+      dataIndex: "bookingId",
+      key: "bookingId",
+    },
     {
       title: "Customer",
       dataIndex: "customerName",
@@ -85,13 +235,20 @@ const Page: React.FC = () => {
     },
     {
       title: "Service",
-      dataIndex: "service",
-      key: "service",
+      dataIndex: "serviceName",
+      key: "serviceName",
+    },
+    {
+      title: "Price",
+      dataIndex: "price",
+      key: "price",
+      render: (price: number) => `$${price.toLocaleString()}`,
     },
     {
       title: "Date",
       dataIndex: "date",
       key: "date",
+      width: "100px",
     },
     {
       title: "Time",
@@ -99,55 +256,44 @@ const Page: React.FC = () => {
       key: "time",
     },
     {
-      title: "Price",
-      dataIndex: "price",
-      key: "price",
-      render: (price: number) => `$${price}`,
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
+      title: "Payment Status",
+      dataIndex: "paymentStatus",
+      key: "paymentStatus",
       render: (status: string) => (
         <Badge
-          status={
-            status === "pending"
-              ? "processing"
-              : status === "approved"
-              ? "success"
-              : "error"
-          }
-          text={status.charAt(0).toUpperCase() + status.slice(1)}
+          status={status === "Pending" ? "processing" : "success"}
+          text={status}
         />
       ),
     },
     {
+      title: "Booking Status",
+      dataIndex: "bookingStatus",
+      key: "bookingStatus",
+      render: (status: string | BookingStatus) => {
+        const enumStatus = getBookingStatusEnum(status);
+        return (
+          <Badge
+            status={getBadgeStatus(enumStatus)}
+            text={StatusMap[enumStatus]}
+            className={
+              enumStatus === BookingStatus.Approved
+                ? "text-green-600"
+                : enumStatus === BookingStatus.Rejected
+                ? "text-red-600"
+                : ""
+            }
+          />
+        );
+      },
+    },
+    {
       title: "Actions",
       key: "actions",
-      render: (_, record) =>
-        record.status === "pending" ? (
-          <div className="flex gap-2">
-            <Button
-              type="primary"
-              icon={<AiOutlineCheck />}
-              className="bg-green-500 hover:bg-green-600"
-              onClick={() => handleStatusChange(record.id, "approved")}
-            >
-              Approve
-            </Button>
-            <Button
-              danger
-              icon={<AiOutlineClose />}
-              onClick={() => handleStatusChange(record.id, "rejected")}
-            >
-              Reject
-            </Button>
-          </div>
-        ) : null,
+      render: (_, record) => renderStatusActions(record),
     },
   ];
 
-  // Calculate summary statistics
   const totalRevenue = revenueData.reduce((sum, data) => sum + data.revenue, 0);
   const totalBookings = revenueData.reduce(
     (sum, data) => sum + data.bookings,
@@ -160,7 +306,6 @@ const Page: React.FC = () => {
 
   return (
     <div className="p-6 w-full max-w-4xl mx-auto flex-1 ml-16 md:ml-96">
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card className="shadow-md">
           <div className="flex items-center justify-between">
@@ -179,7 +324,7 @@ const Page: React.FC = () => {
               <p className="text-gray-500 text-sm">Total Bookings</p>
               <h3 className="text-2xl font-bold">{totalBookings}</h3>
             </div>
-            <div className="text-green-500 flex items-center">
+            <div className="text-green-500">
               <AiOutlineArrowUp className="text-4xl" />
             </div>
           </div>
@@ -201,7 +346,6 @@ const Page: React.FC = () => {
         </Card>
       </div>
 
-      {/* Revenue Graph */}
       <Card
         title="Revenue Overview"
         extra={
@@ -246,14 +390,24 @@ const Page: React.FC = () => {
         </div>
       </Card>
 
-      {/* Bookings Table */}
       <Card title="Recent Bookings" className="shadow-md">
-        <Table
-          columns={columns}
-          dataSource={bookings}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
-        />
+        {error ? (
+          <div className="text-red-500 mb-4">{error}</div>
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={bookings}
+            rowKey="bookingId"
+            pagination={{
+              pageSize: 5,
+              size: "small",
+              showSizeChanger: false,
+            }}
+            loading={loading}
+            className="border rounded-lg overflow-hidden"
+            size="middle"
+          />
+        )}
       </Card>
     </div>
   );

@@ -19,6 +19,8 @@ const apiRoutes = {
   getSkills: `${API_BASE_URL}/api/providers/services/skills`,
   getProviders: `${API_BASE_URL}/api/customers/search-providers`,
   createBooking: `${API_BASE_URL}/api/customers/bookings`,
+  getAllBookings: `${API_BASE_URL}/api/providers/bookings/${userId}`,
+  updateBookingStatus: `${API_BASE_URL}/api/providers/bookings`,
 };
 
 export default apiRoutes;

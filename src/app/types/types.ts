@@ -10,6 +10,15 @@ export enum NotificationType {
   NewReview = "NewReview",
 }
 
+export enum BookingStatus {
+  pending,
+  Approved,
+  Rejected,
+  Cancelled,
+  Completed,
+  Confirmed,
+}
+
 export type Notification = {
   id: number;
   type: NotificationType;
@@ -72,3 +81,4 @@ export interface Review {
   comment: string;
   date: string;
 }
+

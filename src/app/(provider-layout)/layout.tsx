@@ -17,7 +17,12 @@ export default function CustomerLayout({
   const providerId =
     localStorage.getItem("userId") || sessionStorage.getItem("userId");
   const providerMenuItems = [
-    { id: "home", icon: <AiFillHome />, label: "Home", link: "/provider" },
+    {
+      id: "home",
+      icon: <AiFillHome />,
+      label: "Home",
+      link: `/provider/${providerId}`,
+    },
     {
       id: "create",
       icon: <FaRegSquarePlus />,
