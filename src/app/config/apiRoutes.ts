@@ -1,6 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const userId =
-  localStorage.getItem("userId") || sessionStorage.getItem("userId");
+  typeof window !== "undefined"
+    ? localStorage.getItem("userId") || sessionStorage.getItem("userId")
+    : null;
 
 const apiRoutes = {
   signupCustomer: `${API_BASE_URL}/api/auth/RegisterCustomer`,
@@ -21,6 +23,8 @@ const apiRoutes = {
   createBooking: `${API_BASE_URL}/api/customers/bookings`,
   getAllBookings: `${API_BASE_URL}/api/providers/bookings/${userId}`,
   updateBookingStatus: `${API_BASE_URL}/api/providers/bookings`,
+  notificationHub: `${API_BASE_URL}/notificationHub`,
+  getNotifications: `${API_BASE_URL}/api/customers/notifications/${userId}`,
 };
 
 export default apiRoutes;

@@ -1,5 +1,6 @@
 import React from "react";
 import { Notification } from "../types/types";
+import { useNotifications } from "../contexts/NotificationContext";
 
 type NotificationItemProps = {
   notification: Notification;
@@ -8,33 +9,32 @@ type NotificationItemProps = {
 const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
 }) => {
+  const { markAsRead } = useNotifications();
   const IconComponent = notification.icon;
 
-  const iconColor =
-    notification.type === "BookingStatusChange" &&
-    notification.status === "rejected"
-      ? "text-red-500"
-      : "text-blue-500";
+  const handleClick = () => {
+    if (notification.status === 'notRead') {
+      markAsRead(notification.id);
+    }
+  };
 
   return (
-    <div className="flex items-center p-4 border-b border-gray-200 hover:bg-gray-50 transition">
-      <div
-        className={`flex-shrink-0 p-2 rounded-full ${iconColor} bg-gray-100`}
-      >
-        <IconComponent className="w-6 h-6" />
+    <div
+      className={`flex items-center p-4 border-b border-gray-200 hover:bg-gray-50 transition cursor-pointer
+        ${notification.status === 'notRead' ? 'bg-blue-50' : ''}`}
+      onClick={handleClick}
+    >
+      <div className={`flex-shrink-0 p-2 rounded-full bg-gray-100`}>
+        <IconComponent className={`w-6 h-6 ${notification.status === 'notRead' ? 'text-blue-500' : 'text-gray-500'}`} />
       </div>
       <div className="ml-4 flex-1">
-        <p className="text-gray-800 font-medium">{notification.message}</p>
+        <p className={`${notification.status === 'notRead' ? 'font-semibold' : ''} text-gray-800`}>
+          {notification.message}
+        </p>
         <p className="text-gray-500 text-sm">
           {new Date(notification.date).toLocaleString()}
         </p>
       </div>
-      {notification.type === "BookingStatusChange" &&
-        notification.status === "approved" && (
-          <button className="ml-4 px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 transition">
-            Pay
-          </button>
-        )}
     </div>
   );
 };

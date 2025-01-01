@@ -1,32 +1,30 @@
 import { IconType } from "react-icons";
 
-export enum NotificationType {
-  BookingStatusChange = "BookingStatusChange",
-  NewMessage = "NewMessage",
-  ServiceCompleted = "ServiceCompleted",
-  RefundCompleted = "RefundCompleted",
-  NewBooking = "NewBooking",
-  NewPayment = "NewPayment",
-  NewReview = "NewReview",
-}
-
 export enum BookingStatus {
-  pending,
-  Approved,
-  Rejected,
-  Cancelled,
-  Completed,
-  Confirmed,
+  Pending = 0,
+  Approved = 1,
+  Rejected = 2,
+  Completed = 3,
+  Confirmed = 4,
 }
 
-export type Notification = {
+export enum NotificationType {
+  BookingStatusChange = 2,
+  NewMessage = 3,
+  PaymentStatusChange = 4,
+  NewBooking = 5,
+  NewReview = 6,
+}
+
+export interface Notification {
   id: number;
-  type: NotificationType;
   message: string;
   date: string;
+  status: "read" | "notRead";
+  type: NotificationType;
+  bookingStatus?: BookingStatus;
   icon: IconType;
-  status?: "approved" | "rejected";
-};
+}
 
 export enum PriceType {
   fixed = 1,
@@ -81,4 +79,3 @@ export interface Review {
   comment: string;
   date: string;
 }
-

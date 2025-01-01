@@ -1,6 +1,5 @@
 import React from "react";
-import MessageList from "../../components/MessageList";
-
+import MessageList from "@/app/components/MessageList";
 const Page: React.FC = () => {
   const messages = [
     {

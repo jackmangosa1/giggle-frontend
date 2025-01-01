@@ -13,7 +13,7 @@ import {
   FiCheck,
 } from "react-icons/fi";
 import Image from "next/image";
-import CleaningImage from "../../assets/cleaning.jpg";
+import CleaningImage from "@/app/assets/cleaning.jpg";
 
 interface Address {
   street: string;

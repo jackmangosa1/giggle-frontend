@@ -9,13 +9,15 @@ import {
 import { FaRegSquarePlus } from "react-icons/fa6";
 import { MdWorkOutline, MdMiscellaneousServices } from "react-icons/md";
 
-export default function CustomerLayout({
+export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const providerId =
-    localStorage.getItem("userId") || sessionStorage.getItem("userId");
+    typeof window !== "undefined"
+      ? localStorage.getItem("userId") || sessionStorage.getItem("userId")
+      : null;
   const providerMenuItems = [
     {
       id: "home",
