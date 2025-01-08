@@ -1,34 +1,26 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   FiChevronLeft,
   FiUser,
   FiCamera,
-  FiEdit2,
   FiMapPin,
   FiPhone,
   FiMail,
   FiLock,
   FiChevronRight,
-  FiCheck,
 } from "react-icons/fi";
 import Image from "next/image";
 import CleaningImage from "@/app/assets/cleaning.jpg";
-
-interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-}
+import apiRoutes from "@/app/config/apiRoutes";
 
 interface UserProfile {
-  name: string;
+  fullName: string;
   email: string;
-  phone: string;
-  address: Address;
-  profilePicture: string;
+  phoneNumber: string;
+  address: string;
+  profilePictureUrl: string;
+  username: string;
 }
 
 const ProfileSection = ({
@@ -93,81 +85,220 @@ const EditModal = ({
 
 const Page = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserProfile>({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 234 567 8900",
-    address: {
-      street: "123 Main St",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "United States",
-    },
-    profilePicture: "/path/to/profile.jpg",
-  });
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [editForm, setEditForm] = useState<Partial<UserProfile>>({});
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [editForm, setEditForm] = useState<Partial<UserProfile>>(profile);
-  const [editAddress, setEditAddress] = useState<Address>(profile.address);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(apiRoutes.getCustomerProfile);
+        if (!response.ok) throw new Error("Failed to fetch profile");
+        const data = await response.json();
+        setProfile(data);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleProfilePictureClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !profile) return;
+
+    // Create a temporary URL for optimistic update
+    const tempUrl = URL.createObjectURL(file);
+    const originalPictureUrl = profile.profilePictureUrl;
+
+    // Optimistic Update
+    setProfile({ ...profile, profilePictureUrl: tempUrl });
+    setUploadLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(apiRoutes.updateCustomerProfile, {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Failed to upload profile picture");
+
+      const data = await response.json();
+      setProfile((prev) =>
+        prev ? { ...prev, profilePictureUrl: data.profilePictureUrl } : null
+      );
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      setProfile((prev) =>
+        prev ? { ...prev, profilePictureUrl: originalPictureUrl } : prev
+      );
+    } finally {
+      setUploadLoading(false);
+      URL.revokeObjectURL(tempUrl);
+    }
+  };
 
   const handleEditProfile = () => {
-    setEditForm(profile);
+    if (profile) {
+      setEditForm({
+        fullName: profile.fullName,
+        email: profile.email,
+        phoneNumber: profile.phoneNumber,
+      });
+    }
     setActiveModal("profile");
   };
 
   const handleEditAddress = () => {
-    setEditAddress(profile.address);
+    if (profile) {
+      setEditForm({
+        address: profile.address,
+      });
+    }
     setActiveModal("address");
   };
 
   const handleEditSecurity = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
     setActiveModal("security");
   };
 
-  const handleSaveProfile = () => {
-    setProfile({ ...profile, ...editForm });
-    setActiveModal(null);
+  const handleSaveProfile = async () => {
+    if (!profile) return;
+
+    const originalProfile = { ...profile };
+    const updatedProfile = { ...profile, ...editForm };
+    setProfile(updatedProfile);
+
+    try {
+      const formData = new FormData();
+      Object.entries(editForm).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
+      });
+
+      const response = await fetch(apiRoutes.updateCustomerProfile, {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Failed to update profile");
+
+      const updatedData = await response.json();
+      setProfile((prev) => (prev ? { ...prev, ...updatedData } : null));
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      setProfile(originalProfile);
+    } finally {
+      setActiveModal(null);
+    }
   };
 
-  const handleSaveAddress = () => {
-    setProfile({ ...profile, address: editAddress });
-    setActiveModal(null);
+  const handleSavePassword = async () => {
+    // try {
+    //   const formData = new FormData();
+    //   formData.append('currentPassword', currentPassword);
+    //   formData.append('newPassword', newPassword);
+    //   formData.append('confirmPassword', confirmPassword);
+    //   const response = await fetch(apiRoutes.updatePassword, {
+    //     method: "PUT",
+    //     body: formData,
+    //   });
+    //   if (!response.ok) throw new Error("Failed to update password");
+    //   setActiveModal(null);
+    // } catch (error) {
+    //   console.error("Error updating password:", error);
+    // }
   };
 
-  const handleSaveSecurity = () => {
-    // Handle password update logic here
-    setActiveModal(null);
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Failed to load profile
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-gray-50 flex-1 ml-16 md:ml-96">
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Profile Picture Section */}
         <div className="flex flex-col items-center py-6 bg-white rounded-lg shadow-sm">
           <div className="relative">
             <Image
-              src={CleaningImage}
+              src={profile.profilePictureUrl || CleaningImage}
               alt="Profile"
-              className="w-24 h-24 rounded-full object-cover"
+              width={96}
+              height={96}
+              className={`w-24 h-24 rounded-full object-cover ${
+                uploadLoading ? "opacity-50" : ""
+              }`}
             />
-            <button className="absolute bottom-0 right-0 bg-blue-500 p-2 rounded-full text-white shadow-lg hover:bg-blue-600">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+            <button
+              onClick={handleProfilePictureClick}
+              disabled={uploadLoading}
+              className={`absolute bottom-0 right-0 bg-blue-500 p-2 rounded-full text-white shadow-lg 
+                ${
+                  uploadLoading
+                    ? "bg-blue-400 cursor-not-allowed"
+                    : "hover:bg-blue-600"
+                }`}
+            >
               <FiCamera className="h-5 w-5" />
             </button>
+            {uploadLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            )}
           </div>
-          <h2 className="mt-4 text-xl font-semibold">{profile.name}</h2>
+          <h2 className="mt-4 text-xl font-semibold">{profile.fullName}</h2>
           <p className="text-gray-500">{profile.email}</p>
         </div>
 
-        {/* Personal Information */}
         <ProfileSection title="Personal Information" onEdit={handleEditProfile}>
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
               <FiUser className="h-5 w-5 text-gray-400" />
-              <span className="text-gray-600">{profile.name}</span>
+              <span className="text-gray-600">{profile.fullName}</span>
             </div>
             <div className="flex items-center space-x-3">
               <FiPhone className="h-5 w-5 text-gray-400" />
-              <span className="text-gray-600">{profile.phone}</span>
+              <span className="text-gray-600">{profile.phoneNumber}</span>
             </div>
             <div className="flex items-center space-x-3">
               <FiMail className="h-5 w-5 text-gray-400" />
@@ -176,22 +307,15 @@ const Page = () => {
           </div>
         </ProfileSection>
 
-        {/* Address */}
         <ProfileSection title="Address" onEdit={handleEditAddress}>
           <div className="flex items-start space-x-3">
             <FiMapPin className="h-5 w-5 text-gray-400 mt-1" />
             <div className="text-gray-600">
-              <p>{profile.address.street}</p>
-              <p>
-                {profile.address.city}, {profile.address.state}{" "}
-                {profile.address.zipCode}
-              </p>
-              <p>{profile.address.country}</p>
+              <p>{profile.address}</p>
             </div>
           </div>
         </ProfileSection>
 
-        {/* Security */}
         <ProfileSection title="Security" onEdit={handleEditSecurity}>
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center space-x-3">
@@ -203,7 +327,6 @@ const Page = () => {
         </ProfileSection>
       </div>
 
-      {/* Edit Profile Modal */}
       {activeModal === "profile" && (
         <EditModal
           title="Edit Profile"
@@ -217,9 +340,9 @@ const Page = () => {
               </label>
               <input
                 type="text"
-                value={editForm.name}
+                value={editForm.fullName || ""}
                 onChange={(e) =>
-                  setEditForm({ ...editForm, name: e.target.value })
+                  setEditForm({ ...editForm, fullName: e.target.value })
                 }
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -230,9 +353,9 @@ const Page = () => {
               </label>
               <input
                 type="tel"
-                value={editForm.phone}
+                value={editForm.phoneNumber || ""}
                 onChange={(e) =>
-                  setEditForm({ ...editForm, phone: e.target.value })
+                  setEditForm({ ...editForm, phoneNumber: e.target.value })
                 }
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -243,7 +366,7 @@ const Page = () => {
               </label>
               <input
                 type="email"
-                value={editForm.email}
+                value={editForm.email || ""}
                 onChange={(e) =>
                   setEditForm({ ...editForm, email: e.target.value })
                 }
@@ -254,93 +377,35 @@ const Page = () => {
         </EditModal>
       )}
 
-      {/* Edit Address Modal */}
       {activeModal === "address" && (
         <EditModal
           title="Edit Address"
           onClose={() => setActiveModal(null)}
-          onSave={handleSaveAddress}
+          onSave={handleSaveProfile}
         >
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Street
+                Address
               </label>
               <input
                 type="text"
-                value={editAddress.street}
+                value={editForm.address || ""}
                 onChange={(e) =>
-                  setEditAddress({ ...editAddress, street: e.target.value })
+                  setEditForm({ ...editForm, address: e.target.value })
                 }
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={editAddress.city}
-                  onChange={(e) =>
-                    setEditAddress({ ...editAddress, city: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
-                </label>
-                <input
-                  type="text"
-                  value={editAddress.state}
-                  onChange={(e) =>
-                    setEditAddress({ ...editAddress, state: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code
-                </label>
-                <input
-                  type="text"
-                  value={editAddress.zipCode}
-                  onChange={(e) =>
-                    setEditAddress({ ...editAddress, zipCode: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
-                <input
-                  type="text"
-                  value={editAddress.country}
-                  onChange={(e) =>
-                    setEditAddress({ ...editAddress, country: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
             </div>
           </div>
         </EditModal>
       )}
 
-      {/* Security Modal */}
       {activeModal === "security" && (
         <EditModal
           title="Change Password"
           onClose={() => setActiveModal(null)}
-          onSave={handleSaveSecurity}
+          onSave={handleSavePassword}
         >
           <div className="space-y-4">
             <div>
@@ -349,6 +414,8 @@ const Page = () => {
               </label>
               <input
                 type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -358,6 +425,8 @@ const Page = () => {
               </label>
               <input
                 type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -367,6 +436,8 @@ const Page = () => {
               </label>
               <input
                 type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>

@@ -25,6 +25,10 @@ const apiRoutes = {
   updateBookingStatus: `${API_BASE_URL}/api/providers/bookings`,
   notificationHub: `${API_BASE_URL}/notificationHub`,
   getNotifications: `${API_BASE_URL}/api/customers/notifications/${userId}`,
+  getCustomerProfile: `${API_BASE_URL}/api/customers/profile/${userId}`,
+  updateCustomerProfile: `${API_BASE_URL}/api/customers/profile/${userId}`,
+  savePayment: `${API_BASE_URL}/api/customers/payments`,
+  confirmBooking: `${API_BASE_URL}/api/customers/bookings`,
 };
 
 export default apiRoutes;

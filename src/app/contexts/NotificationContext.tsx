@@ -73,23 +73,46 @@ const getIconForNotificationType = (
   }
 };
 
-const getBookingStatusMessage = (
-  status: BookingStatus,
-  serviceName: string = "your service"
-): string => {
+const getBookingStatusMessage = (status: BookingStatus, bookingId: number): string => {
   switch (status) {
-    case BookingStatus.Pending:
-      return `Your booking for ${serviceName} is pending approval.`;
     case BookingStatus.Approved:
-      return `Your booking for ${serviceName} has been approved.`;
+      return `Your booking #${bookingId} has been approved`;
     case BookingStatus.Rejected:
-      return `Your booking for ${serviceName} has been rejected.`;
+      return `Your booking #${bookingId} has been rejected`;
     case BookingStatus.Completed:
-      return `Your booking for ${serviceName} has been marked as completed.`;
+      return `Your booking #${bookingId} has been completed`;
     case BookingStatus.Confirmed:
-      return `Your booking for ${serviceName} has been confirmed.`;
+      return `Your booking #${bookingId} has been confirmed`;
+    case BookingStatus.Pending:
+      return `Your booking #${bookingId} is pending`;
     default:
-      return `Your booking for ${serviceName} status has been updated.`;
+      return `Your booking #${bookingId} status has been updated`;
+  }
+};
+
+const getNotificationMessage = (
+  type: NotificationType,
+  bookingId?: number,
+  bookingStatus?: BookingStatus
+): string => {
+  switch (type) {
+    case NotificationType.NewBooking:
+      return "You have a new booking for your service";
+    case NotificationType.NewReview:
+      return "A new review has been added for your service";
+    case NotificationType.BookingStatusChange:
+      if (bookingId && bookingStatus !== undefined) {
+        return getBookingStatusMessage(bookingStatus, bookingId);
+      }
+      return "A booking status has been updated";
+    case NotificationType.PaymentStatusChange:
+      return bookingId
+        ? `Payment for booking #${bookingId} has been processed successfully`
+        : "A payment has been processed successfully";
+    case NotificationType.NewMessage:
+      return "You have a new message";
+    default:
+      return "You have a new notification";
   }
 };
 
@@ -97,9 +120,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [connection, setConnection] = useState<signalR.HubConnection | null>(
-    null
-  );
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<
     "connected" | "disconnected" | "connecting"
   >("disconnected");
@@ -118,9 +139,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
                 ...notif,
                 message:
                   notif.message ||
-                  (notif.bookingStatus !== undefined
-                    ? getBookingStatusMessage(notif.bookingStatus)
-                    : "You have a new notification"),
+                  getNotificationMessage(notif.type, notif.bookingId, notif.bookingStatus),
                 icon: getIconForNotificationType(
                   notif.type,
                   notif.bookingStatus
@@ -130,7 +149,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             ]);
           }
         } else {
-          console.error("Failed to fetch saved notifications.");
+          console.error("Failed to fetch saved notifications");
         }
       } catch (err) {
         console.error("Error fetching saved notifications:", err);
@@ -169,19 +188,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
         newConnection.on(
           "ReceiveNotification",
-          (message: string, bookingStatus?: BookingStatus) => {
+          (message: string, bookingId?: number, type?: NotificationType, bookingStatus?: BookingStatus) => {
             if (mounted) {
+              const notificationType = type ?? NotificationType.BookingStatusChange;
               const newNotification: Notification = {
                 id: Date.now(),
-                message,
+                message:
+                  message ||
+                  getNotificationMessage(notificationType, bookingId, bookingStatus),
                 date: new Date().toISOString(),
                 status: "notRead",
-                type: NotificationType.BookingStatusChange,
+                type: notificationType,
+                bookingId,
                 bookingStatus,
-                icon: getIconForNotificationType(
-                  NotificationType.BookingStatusChange,
-                  bookingStatus
-                ),
+                icon: getIconForNotificationType(notificationType, bookingStatus),
               };
               setNotifications((prev) => [newNotification, ...prev]);
             }
@@ -213,7 +233,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  const markAsRead = async (id: number) => {};
+  const markAsRead = async (id: number) => {
+    // try {
+    //   const response = await fetch(`${apiRoutes.markAsRead}/${id}`, {
+    //     method: "POST"
+    //   });
+      
+    //   if (response.ok) {
+    //     setNotifications((prev) =>
+    //       prev.map((notif) =>
+    //         notif.id === id ? { ...notif, status: "read" } : notif
+    //       )
+    //     );
+    //   } else {
+    //     console.error("Failed to mark notification as read");
+    //   }
+    // } catch (err) {
+    //   console.error("Error marking notification as read:", err);
+    // }
+  };
 
   const unreadCount = notifications.filter(
     (n) => n.status === "notRead"

@@ -9,11 +9,23 @@ export enum BookingStatus {
 }
 
 export enum NotificationType {
+  NewBooking = 0,
+  NewReview = 1,
   BookingStatusChange = 2,
-  NewMessage = 3,
-  PaymentStatusChange = 4,
-  NewBooking = 5,
-  NewReview = 6,
+  PaymentStatusChange = 3,
+  NewMessage = 4,
+}
+
+export enum PaymentStatus {
+  Pending = 0,
+  Escrow = 1,
+  Released = 2,
+  Refunded = 3,
+}
+export enum PaymentMethod {
+  Momo = 0,
+  Card = 1,
+  BankTransfer = 2,
 }
 
 export interface Notification {
@@ -23,6 +35,12 @@ export interface Notification {
   status: "read" | "notRead";
   type: NotificationType;
   bookingStatus?: BookingStatus;
+  paymentStatus?: PaymentStatus,
+  bookingId?: number;
+  customerName?: string;
+  email?: string;
+  phoneNumber?: string;
+  amount?: number;
   icon: IconType;
 }
 

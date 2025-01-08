@@ -227,38 +227,136 @@ const Page: React.FC = () => {
       title: "ID",
       dataIndex: "bookingId",
       key: "bookingId",
+      onCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+      onHeaderCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
     },
     {
       title: "Customer",
       dataIndex: "customerName",
       key: "customerName",
+      width: "250px",
+      onCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+      onHeaderCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
     },
     {
       title: "Service",
       dataIndex: "serviceName",
       key: "serviceName",
+      onCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+      onHeaderCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
     },
     {
       title: "Price",
       dataIndex: "price",
       key: "price",
       render: (price: number) => `$${price.toLocaleString()}`,
+      onCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+      onHeaderCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
     },
     {
       title: "Date",
       dataIndex: "date",
       key: "date",
-      width: "100px",
+      onCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+      onHeaderCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
     },
     {
       title: "Time",
       dataIndex: "time",
       key: "time",
+      onCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+      onHeaderCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
     },
     {
       title: "Payment Status",
       dataIndex: "paymentStatus",
       key: "paymentStatus",
+      onCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+      onHeaderCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
       render: (status: string) => (
         <Badge
           status={status === "Pending" ? "processing" : "success"}
@@ -270,6 +368,20 @@ const Page: React.FC = () => {
       title: "Booking Status",
       dataIndex: "bookingStatus",
       key: "bookingStatus",
+      onCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+      onHeaderCell: () => ({
+        style: {
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
       render: (status: string | BookingStatus) => {
         const enumStatus = getBookingStatusEnum(status);
         return (
@@ -305,7 +417,7 @@ const Page: React.FC = () => {
     ((lastMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100;
 
   return (
-    <div className="p-6 w-full max-w-4xl mx-auto flex-1 ml-16 md:ml-96">
+    <div className="p-6 w-full max-w-5xl mx-auto flex-1 ml-16 md:ml-96">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card className="shadow-md">
           <div className="flex items-center justify-between">
