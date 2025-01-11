@@ -30,6 +30,12 @@ enum BookingStatus {
   Confirmed,
 }
 
+interface RevenueData {
+  date: string; // Format: "YYYY-MM"
+  revenue: number;
+  bookings: number;
+}
+
 const StatusMap = {
   [BookingStatus.Pending]: "Pending",
   [BookingStatus.Approved]: "Approved",
@@ -49,21 +55,6 @@ interface Booking {
   bookingStatus: string | BookingStatus;
 }
 
-interface RevenueData {
-  date: string;
-  revenue: number;
-  bookings: number;
-}
-
-const revenueData: RevenueData[] = [
-  { date: "2024-01", revenue: 4000, bookings: 24 },
-  { date: "2024-02", revenue: 5500, bookings: 32 },
-  { date: "2024-03", revenue: 4800, bookings: 28 },
-  { date: "2024-04", revenue: 6000, bookings: 35 },
-  { date: "2024-05", revenue: 5200, bookings: 30 },
-  { date: "2024-06", revenue: 7000, bookings: 40 },
-];
-
 const getBookingStatusEnum = (
   status: string | BookingStatus
 ): BookingStatus => {
@@ -82,9 +73,56 @@ const Page: React.FC = () => {
     null
   );
 
+  const [dashboardData, setDashboardData] = useState<{
+    totalRevenue: number;
+    totalBookings: number;
+    revenueGrowthPercentage: number;
+    monthlyData: RevenueData[];
+  } | null>(null);
+
   useEffect(() => {
+    fetchDashboardData();
     fetchBookings();
   }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch(apiRoutes.getProviderStatistics);
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+
+      const transformedData = {
+        ...data,
+        monthlyData: data.revenueData.map((item: RevenueData) => ({
+          date: item.date,
+          revenue: item.revenue,
+          bookings: item.bookings,
+        })),
+      };
+
+      setDashboardData(transformedData);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      message.error("Failed to fetch dashboard data");
+    }
+  };
+
+  const getFilteredData = () => {
+    if (!dashboardData?.monthlyData) return [];
+
+    const currentDate = new Date();
+    const monthsToShow =
+      timeRange === "1m"
+        ? 1
+        : timeRange === "3m"
+        ? 3
+        : timeRange === "6m"
+        ? 6
+        : 12;
+
+    return dashboardData.monthlyData.slice(-monthsToShow);
+  };
 
   const fetchBookings = async () => {
     try {
@@ -406,16 +444,6 @@ const Page: React.FC = () => {
     },
   ];
 
-  const totalRevenue = revenueData.reduce((sum, data) => sum + data.revenue, 0);
-  const totalBookings = revenueData.reduce(
-    (sum, data) => sum + data.bookings,
-    0
-  );
-  const lastMonthRevenue = revenueData[revenueData.length - 1].revenue;
-  const previousMonthRevenue = revenueData[revenueData.length - 2].revenue;
-  const revenueGrowth =
-    ((lastMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100;
-
   return (
     <div className="p-6 w-full max-w-5xl mx-auto flex-1 ml-16 md:ml-96">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -424,7 +452,7 @@ const Page: React.FC = () => {
             <div>
               <p className="text-gray-500 text-sm">Total Revenue</p>
               <h3 className="text-2xl font-bold">
-                ${totalRevenue.toLocaleString()}
+                ${dashboardData?.totalRevenue.toLocaleString() || 0}
               </h3>
             </div>
             <AiFillDollarCircle className="text-4xl text-blue-500" />
@@ -434,25 +462,36 @@ const Page: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Total Bookings</p>
-              <h3 className="text-2xl font-bold">{totalBookings}</h3>
+              <h3 className="text-2xl font-bold">
+                {" "}
+                {dashboardData?.totalBookings.toLocaleString() || 0}
+              </h3>
             </div>
             <div className="text-green-500">
               <AiOutlineArrowUp className="text-4xl" />
             </div>
           </div>
         </Card>
-        <Card className="shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Revenue Growth</p>
-              <h3 className="text-2xl font-bold">
-                {revenueGrowth.toFixed(1)}%
-                {revenueGrowth >= 0 ? (
-                  <AiOutlineArrowUp className="inline ml-2 text-green-500" />
-                ) : (
-                  <AiOutlineArrowDown className="inline ml-2 text-red-500" />
-                )}
-              </h3>
+        <Card>
+          <div className="flex items-center">
+            {dashboardData?.revenueGrowthPercentage &&
+            dashboardData?.revenueGrowthPercentage >= 0 ? (
+              <AiOutlineArrowUp className="text-4xl text-green-500" />
+            ) : (
+              <AiOutlineArrowDown className="text-4xl text-red-500" />
+            )}
+            <div className="ml-4">
+              <p className="text-sm text-gray-500">Revenue Growth</p>
+              <h2
+                className={`text-2xl font-bold ${
+                  dashboardData?.revenueGrowthPercentage &&
+                  dashboardData?.revenueGrowthPercentage >= 0
+                    ? "text-green-500"
+                    : "text-red-500"
+                }`}
+              >
+                {dashboardData?.revenueGrowthPercentage || 0}%
+              </h2>
             </div>
           </div>
         </Card>
@@ -476,7 +515,7 @@ const Page: React.FC = () => {
       >
         <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={revenueData}>
+            <LineChart data={getFilteredData()}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis yAxisId="left" />

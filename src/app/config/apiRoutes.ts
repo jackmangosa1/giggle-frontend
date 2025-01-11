@@ -29,6 +29,7 @@ const apiRoutes = {
   updateCustomerProfile: `${API_BASE_URL}/api/customers/profile/${userId}`,
   savePayment: `${API_BASE_URL}/api/customers/payments`,
   confirmBooking: `${API_BASE_URL}/api/customers/bookings`,
+  getProviderStatistics: `${API_BASE_URL}/api/providers/${userId}/statistics`,
 };
 
 export default apiRoutes;
