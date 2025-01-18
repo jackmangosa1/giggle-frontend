@@ -1,16 +1,56 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input, Button, Upload, message } from "antd";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import type { RcFile } from "antd/es/upload/interface";
+import apiRoutes from "@/app/config/apiRoutes";
 
 const Page = () => {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const serviceId = searchParams.get("id");
+  const bookingId = parseInt(params.id as string);
+
   const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>();
+  const [imageFile, setImageFile] = useState<RcFile | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>();
   const [form, setForm] = useState({
-    title: "",
     description: "",
   });
+
+  useEffect(() => {
+    if (serviceId) {
+      fetchServiceDetails();
+    }
+  }, [serviceId]);
+
+  const fetchServiceDetails = async () => {
+    try {
+      const response = await fetch(
+        `${apiRoutes.getCompletedService}/${serviceId}`
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        setForm({
+          description: data.description || "",
+        });
+        if (data.mediaUrl) {
+          // Add a timestamp or random query parameter to force image refresh
+          setImagePreview(`${data.mediaUrl}?t=${Date.now()}`);
+          setImageFile(null);
+        }
+      } else {
+        throw new Error("Failed to fetch service details");
+      }
+    } catch (error) {
+      console.error("Error fetching service details:", error);
+      message.error("Failed to fetch service details");
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -25,13 +65,70 @@ const Page = () => {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      // Add your API call here to save the portfolio item
-      message.success("Portfolio item created successfully!");
+
+      const formData = new FormData();
+      formData.append("bookingId", bookingId.toString());
+      formData.append("description", form.description);
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      const method = serviceId ? "PUT" : "POST";
+      const url = serviceId
+        ? `${apiRoutes.updateCompletedService}/${serviceId}`
+        : apiRoutes.addCompletedService;
+
+      const response = await fetch(url, {
+        method: method,
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          serviceId ? "Failed to update service" : "Failed to create service"
+        );
+      }
+
+      message.success(
+        serviceId
+          ? "Portfolio item updated successfully!"
+          : "Portfolio item created successfully!"
+      );
+
+      // Refetch the service details after successful update
+      if (serviceId) {
+        await fetchServiceDetails();
+      }
     } catch (error) {
-      message.error("Failed to create portfolio item");
+      console.error("Error in service operation:", error);
+      message.error(
+        serviceId
+          ? "Failed to update portfolio item"
+          : "Failed to create portfolio item"
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const beforeUpload = (file: RcFile) => {
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      message.error("You can only upload image files!");
+      return false;
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error("Image must smaller than 2MB!");
+      return false;
+    }
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    return false;
   };
 
   const uploadButton = (
@@ -43,27 +140,25 @@ const Page = () => {
 
   return (
     <div className="p-6 w-full max-w-2xl mx-auto bg-gray-50 flex-1 ml-16 md:ml-96">
-      <h1 className="text-2xl font-bold mb-6">Create Portfolio Item</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        {serviceId ? "Edit Portfolio Item" : "Create Portfolio Item"}
+      </h1>
 
       <div className="space-y-6">
         <div>
           <Upload
-            name="avatar"
+            name="image"
             listType="picture-card"
             className="avatar-uploader"
             showUploadList={false}
-            action="/api/upload" // Add your upload endpoint
-            onChange={(info) => {
-              if (info.file.status === "done") {
-                setImageUrl(info.file.response.url);
-              }
-            }}
+            beforeUpload={beforeUpload}
           >
-            {imageUrl ? (
+            {imagePreview ? (
               <img
-                src={imageUrl}
-                alt="avatar"
+                src={imagePreview}
+                alt="preview"
                 className="w-full h-full object-cover"
+                key={imagePreview} // Add key prop to force re-render
               />
             ) : (
               uploadButton
@@ -72,23 +167,12 @@ const Page = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Title</label>
-          <Input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="Enter portfolio item title"
-            className="w-full"
-          />
-        </div>
-
-        <div>
           <label className="block text-sm font-medium mb-2">Description</label>
           <TextArea
             name="description"
             value={form.description}
             onChange={handleChange}
-            placeholder="Describe your work"
+            placeholder="Describe the completed service"
             rows={6}
             className="w-full"
           />
@@ -100,7 +184,7 @@ const Page = () => {
           loading={loading}
           className="w-full bg-blue-600 hover:bg-blue-700"
         >
-          Create Portfolio Item
+          {serviceId ? "Update Portfolio Item" : "Create Portfolio Item"}
         </Button>
       </div>
     </div>

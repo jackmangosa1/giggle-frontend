@@ -37,12 +37,6 @@ export default function Layout({
           label: "Service",
           link: `/provider/${providerId}/create/service`,
         },
-        {
-          id: "create-portfolio",
-          icon: <MdWorkOutline />,
-          label: "Portfolio",
-          link: `/provider/${providerId}/create/portfolio`,
-        },
       ],
     },
     {

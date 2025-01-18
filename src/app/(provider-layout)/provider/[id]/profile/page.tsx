@@ -175,6 +175,36 @@ const ProfilePage = () => {
     fetchProviderProfile();
   }, []);
 
+  useEffect(() => {
+    const fetchCompletedServices = async () => {
+      try {
+        const response = await fetch(apiRoutes.getAllCompletedServices, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            // Add authentication headers if necessary
+            // 'Authorization': `Bearer ${token}`
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch completed services.");
+        }
+
+        const data = await response.json();
+        setCompletedServices(data || []);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred."
+        );
+      }
+    };
+
+    if (activeTab === "portfolio") {
+      fetchCompletedServices();
+    }
+  }, [activeTab]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setProfileImage(e.target.files[0]);
@@ -254,11 +284,40 @@ const ProfilePage = () => {
   };
 
   const handleEditPortfolio = (item: CompletedService) => {
-    console.log("Edit portfolio:", item);
+    router.push(`/provider/${userId}/create/portfolio?id=${item.id}`);
   };
 
   const handleDeletePortfolio = (id: number) => {
-    setCompletedServices(completedServices.filter((item) => item.id !== id));
+    Modal.confirm({
+      title: "Are you sure?",
+      content:
+        "Do you really want to delete this portfolio item? This action cannot be undone.",
+      okText: "Yes, Delete",
+      icon: null,
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          const response = await fetch(
+            `${apiRoutes.deleteCompletedService}/${id}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to delete portfolio item");
+          }
+
+          setCompletedServices(
+            completedServices.filter((item) => item.id !== id)
+          );
+          message.success("Portfolio item deleted successfully.");
+        } catch (err) {
+          console.error("Portfolio item deletion failed:", err);
+          message.error("Failed to delete portfolio item.");
+        }
+      },
+    });
   };
 
   const handleAddSkill = (skill: string) => {
@@ -387,14 +446,18 @@ const ProfilePage = () => {
 
         {activeTab === "portfolio" && (
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {completedServices.map((item) => (
-              <PortfolioCard
-                key={item.id}
-                item={item}
-                onEdit={handleEditPortfolio}
-                onDelete={handleDeletePortfolio}
-              />
-            ))}
+            {completedServices.length > 0 ? (
+              completedServices.map((service) => (
+                <PortfolioCard
+                  key={service.id}
+                  item={service}
+                  onEdit={handleEditPortfolio}
+                  onDelete={handleDeletePortfolio}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">No completed services available.</p>
+            )}
           </div>
         )}
       </div>

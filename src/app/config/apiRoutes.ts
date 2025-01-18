@@ -30,6 +30,15 @@ const apiRoutes = {
   savePayment: `${API_BASE_URL}/api/customers/payments`,
   confirmBooking: `${API_BASE_URL}/api/customers/bookings`,
   getProviderStatistics: `${API_BASE_URL}/api/providers/${userId}/statistics`,
+  addCompletedService: `${API_BASE_URL}/api/providers/completed-services`,
+  getAllCompletedServices: `${API_BASE_URL}/api/providers/completed-services/${userId}`,
+  deleteCompletedService: `${API_BASE_URL}/api/providers/completed-services`,
+  updateCompletedService: `${API_BASE_URL}/api/providers/completed-services`,
+  getCompletedService: `${API_BASE_URL}/api/providers/completed-service`,
+  createReview: `${API_BASE_URL}/api/customers/reviews`,
+  updateReview: `${API_BASE_URL}/api/customers/reviews`,
+  getReview: `${API_BASE_URL}/api/customers/reviews`,
+  deleteReview: `${API_BASE_URL}/api/customers/reviews`,
 };
 
 export default apiRoutes;

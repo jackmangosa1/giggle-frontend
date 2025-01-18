@@ -21,6 +21,7 @@ import {
   AiOutlineCheckCircle,
 } from "react-icons/ai";
 import apiRoutes from "@/app/config/apiRoutes";
+import { useRouter } from "next/navigation";
 
 enum BookingStatus {
   Pending,
@@ -31,7 +32,7 @@ enum BookingStatus {
 }
 
 interface RevenueData {
-  date: string; // Format: "YYYY-MM"
+  date: string;
   revenue: number;
   bookings: number;
 }
@@ -65,6 +66,7 @@ const getBookingStatusEnum = (
 };
 
 const Page: React.FC = () => {
+  const router = useRouter();
   const [timeRange, setTimeRange] = useState<string>("6m");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -440,7 +442,24 @@ const Page: React.FC = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_, record) => renderStatusActions(record),
+      render: (_, record: Booking) => {
+        const enumStatus = getBookingStatusEnum(record.bookingStatus);
+
+        if (enumStatus === BookingStatus.Confirmed) {
+          return (
+            <Button
+              type="primary"
+              onClick={() =>
+                router.push(`/provider/${record.bookingId}/create/portfolio`)
+              }
+            >
+              Create Portfolio
+            </Button>
+          );
+        }
+
+        return null;
+      },
     },
   ];
 

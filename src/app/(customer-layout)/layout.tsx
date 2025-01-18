@@ -26,20 +26,20 @@ export default function Layout({
       id: "messages",
       icon: <AiFillMessage />,
       label: "Messages",
-      link: `customer/${userId}/messages`,
+      link: `/customer/${userId}/messages`,
       notifications: unreadCount,
     },
     {
       id: "notifications",
       icon: <AiFillHeart />,
       label: "Notifications",
-      link: `customer/${userId}/notifications`,
+      link: `/customer/${userId}/notifications`,
     },
     {
       id: "profile",
       icon: <AiOutlineUser />,
       label: "Profile",
-      link: `customer/${userId}/profile`,
+      link: `/customer/${userId}/profile`,
     },
   ];
 

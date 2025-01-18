@@ -72,6 +72,7 @@ export interface CompletedService {
   title: string;
   description: string;
   mediaUrl?: string;
+  userId: string;
   completedAt: string;
   reviews: Review[];
 }

@@ -224,9 +224,7 @@ const SearchResultsPage: React.FC = () => {
             <div className="lg:col-span-3 space-y-4">
               {filteredProviders.map((provider) => (
                 <div
-                  onClick={() =>
-                    router.push(`provider/profile/${provider.providerId}`)
-                  }
+                  onClick={() => router.push(`customer/${provider.providerId}`)}
                   key={provider.providerId}
                   className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-4 md:p-6 cursor-pointer"
                 >
