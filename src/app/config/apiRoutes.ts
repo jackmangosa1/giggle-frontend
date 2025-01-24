@@ -24,6 +24,7 @@ const apiRoutes = {
   getAllBookings: `${API_BASE_URL}/api/providers/bookings/${userId}`,
   updateBookingStatus: `${API_BASE_URL}/api/providers/bookings`,
   notificationHub: `${API_BASE_URL}/notificationHub`,
+  chatHub: `${API_BASE_URL}/chatHub`,
   getNotifications: `${API_BASE_URL}/api/customers/notifications/${userId}`,
   getCustomerProfile: `${API_BASE_URL}/api/customers/profile/${userId}`,
   updateCustomerProfile: `${API_BASE_URL}/api/customers/profile/${userId}`,
@@ -39,6 +40,10 @@ const apiRoutes = {
   updateReview: `${API_BASE_URL}/api/customers/reviews`,
   getReview: `${API_BASE_URL}/api/customers/reviews`,
   deleteReview: `${API_BASE_URL}/api/customers/reviews`,
+  sendMessageToProvider: `${API_BASE_URL}/api/customers/messages`,
+  getChatHistory: `${API_BASE_URL}/api/customers/messages/history`,
+  markMessagesAsread: `${API_BASE_URL}/api/customers/messages/mark-as-read`,
+  getUnreadMessagesCount: `${API_BASE_URL}/api/customers/messages/unread-count`,
 };
 
 export default apiRoutes;

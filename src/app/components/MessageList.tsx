@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FiSearch,
   FiEdit2,
@@ -10,190 +10,29 @@ import {
   FiMoreVertical,
   FiPaperclip,
 } from "react-icons/fi";
-import { StaticImageData } from "next/image";
 import Image from "next/image";
 import CleaningImage from "../assets/cleaning.jpg";
-
-const MessageStatus = ({
-  isDelivered,
-  isRead,
-}: {
-  isDelivered: boolean;
-  isRead: boolean;
-}) => {
-  if (!isDelivered) {
-    return <FiCheck className="h-4 w-4 text-gray-400" />;
-  }
-
-  return (
-    <div className="relative flex">
-      <FiCheck
-        className={`h-4 w-4 ${isRead ? "text-blue-500" : "text-gray-400"}`}
-      />
-      <FiCheck
-        className={`h-4 w-4 -ml-2 ${
-          isRead ? "text-blue-500" : "text-gray-400"
-        }`}
-      />
-    </div>
-  );
-};
-
-interface Message {
-  id: string;
-  sender: string;
-  text: string;
-  date: string;
-  isRead: boolean;
-  isSent: boolean;
-  isDelivered: boolean;
-}
+import { useChat } from "../hooks/useChat";
+import MessageStatus from "./MessageStatus";
+import ChatDetail from "./ChatDetail";
+import { Message } from "../types/types";
 
 interface MessageListProps {
   messages: Message[];
+  currentUserId: string | null;
 }
 
-const ChatDetail = ({
-  message,
-  onClose,
-}: {
-  message: Message;
-  onClose: () => void;
+const MessageList: React.FC<MessageListProps> = ({
+  messages,
+  currentUserId,
 }) => {
-  const [newMessage, setNewMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState([
-    { ...message, isSent: false }, // Received message
-    {
-      id: "2",
-      sender: "You",
-      text: "Hello! How can I help you today?",
-      date: new Date().toISOString(),
-      isRead: true,
-      isSent: true,
-      isDelivered: true,
-    },
-  ]);
-
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      setChatMessages([
-        ...chatMessages,
-        {
-          id: Date.now().toString(),
-          sender: "You",
-          text: newMessage,
-          date: new Date().toISOString(),
-          isRead: false,
-          isSent: true,
-          isDelivered: true,
-        },
-      ]);
-      setNewMessage("");
-    }
-  };
-
-  const formatMessageTime = (date: string) => {
-    return new Date(date).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col">
-      {/* Chat Header */}
-      <div className="bg-white shadow-sm px-4 py-2 flex items-center space-x-4">
-        <button
-          onClick={onClose}
-          className="p-2 rounded-full hover:bg-gray-100"
-        >
-          <FiChevronLeft className="h-6 w-6 text-gray-700" />
-        </button>
-        <div className="flex items-center flex-1">
-          <Image
-            src={CleaningImage}
-            alt={message.sender}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div className="ml-3">
-            <h2 className="font-semibold">{message.sender}</h2>
-            <p className="text-xs text-gray-500">Online</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button className="p-2 rounded-full hover:bg-gray-100">
-            <FiCamera className="h-5 w-5 text-gray-700" />
-          </button>
-          <button className="p-2 rounded-full hover:bg-gray-100">
-            <FiMoreVertical className="h-5 w-5 text-gray-700" />
-          </button>
-        </div>
-      </div>
-
-      {/* Chat Messages */}
-      <div className="flex-1 bg-gray-100 p-4 overflow-y-auto">
-        <div className="space-y-4">
-          {chatMessages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.isSent ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                  msg.isSent
-                    ? "bg-blue-500 text-white"
-                    : "bg-white text-gray-900"
-                }`}
-              >
-                <p className="text-sm">{msg.text}</p>
-                <div className="flex items-center justify-end space-x-1 mt-1">
-                  <span className="text-xs opacity-70">
-                    {formatMessageTime(msg.date)}
-                  </span>
-                  {msg.isSent && (
-                    <MessageStatus
-                      isDelivered={msg.isDelivered}
-                      isRead={msg.isRead}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Message Input */}
-      <div className="bg-white p-4 flex items-center space-x-4">
-        <button className="p-2 rounded-full hover:bg-gray-100">
-          <FiPaperclip className="h-6 w-6 text-gray-700" />
-        </button>
-        <input
-          type="text"
-          placeholder="Type a message"
-          className="flex-1 px-4 py-2 bg-gray-100 rounded-full focus:outline-none"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-        />
-        <button
-          onClick={handleSendMessage}
-          className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-        >
-          <FiSend className="h-5 w-5" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const MessageList: React.FC<MessageListProps> = ({ messages }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
-  const formatMessageTime = (date: Date) => {
+  const formatMessageTime = (date: string) => {
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const messageDate = new Date(date);
+    const diff = now.getTime() - messageDate.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
@@ -201,7 +40,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     if (days === 1) return "Yesterday";
-    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    return messageDate.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   return (
@@ -210,6 +52,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
         <ChatDetail
           message={selectedMessage}
           onClose={() => setSelectedMessage(null)}
+          currentUserId={currentUserId}
         />
       ) : (
         <>
@@ -258,7 +101,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
           <div className="divide-y">
             {messages
               .filter((message) =>
-                message.sender.toLowerCase().includes(searchQuery.toLowerCase())
+                message.senderId
+                  ?.toLowerCase()
+                  .includes(searchQuery.toLowerCase())
               )
               .map((message) => (
                 <div
@@ -270,7 +115,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
                   <div className="relative flex-shrink-0">
                     <Image
                       src={CleaningImage}
-                      alt={message.sender}
+                      alt={message.senderId}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                     {/* Online Status Indicator */}
@@ -281,21 +126,20 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h2 className="text-sm font-semibold text-gray-900">
-                        {message.sender}
+                        {message.senderId}
                       </h2>
                       <span className="text-xs text-gray-500">
-                        {formatMessageTime(new Date(message.date))}
+                        {formatMessageTime(message.sentAt)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <p className="text-sm text-gray-500 truncate pr-8">
-                        {message.text}
+                        {message.content}
                       </p>
                       <div className="flex items-center space-x-2">
-                        <MessageStatus
-                          isDelivered={message.isDelivered}
-                          isRead={message.isRead}
-                        />
+                        {message.senderId === currentUserId && (
+                          <MessageStatus isRead={message.isRead} />
+                        )}
                       </div>
                     </div>
                   </div>

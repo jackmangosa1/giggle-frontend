@@ -255,6 +255,17 @@ const Page: React.FC = () => {
             Complete
           </Button>
         );
+      case StatusMap[BookingStatus.Confirmed]:
+        return (
+          <Button
+            type="primary"
+            onClick={() =>
+              router.push(`/provider/${bookingId}/create/portfolio`)
+            }
+          >
+            Create Portfolio
+          </Button>
+        );
       case StatusMap[BookingStatus.Rejected]:
         return null;
       default:
@@ -442,24 +453,7 @@ const Page: React.FC = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_, record: Booking) => {
-        const enumStatus = getBookingStatusEnum(record.bookingStatus);
-
-        if (enumStatus === BookingStatus.Confirmed) {
-          return (
-            <Button
-              type="primary"
-              onClick={() =>
-                router.push(`/provider/${record.bookingId}/create/portfolio`)
-              }
-            >
-              Create Portfolio
-            </Button>
-          );
-        }
-
-        return null;
-      },
+      render: (_, record: Booking) => renderStatusActions(record),
     },
   ];
 

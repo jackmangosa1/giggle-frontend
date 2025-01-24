@@ -17,6 +17,7 @@ import {
 import apiRoutes from "@/app/config/apiRoutes";
 import { CompletedService, Service } from "@/app/types/types";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 interface Review {
   id: number;
@@ -28,6 +29,7 @@ interface Review {
 }
 
 const ServiceProviderProfile: React.FC = () => {
+  const router = useRouter();
   const { id } = useParams();
   const [providerData, setProviderData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"services" | "portfolio">(
@@ -377,7 +379,14 @@ const ServiceProviderProfile: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 sm:mt-0 flex-shrink-0">
-            <button className="flex items-center bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 sm:px-5 py-2 sm:py-3 rounded-full shadow-lg transform transition-transform hover:scale-105">
+            <button
+              className="flex items-center bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 sm:px-5 py-2 sm:py-3 rounded-full shadow-lg transform transition-transform hover:scale-105"
+              onClick={() =>
+                router.push(
+                  `/customer/${userId}/messages/chat/${providerData.id}`
+                )
+              }
+            >
               <BiMessageSquareDetail className="mr-2" size={20} />
               Chat
             </button>
