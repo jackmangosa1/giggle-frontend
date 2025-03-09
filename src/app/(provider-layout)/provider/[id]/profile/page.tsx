@@ -10,6 +10,8 @@ import ServiceCard from "../../../../components/ProviderServiceCard";
 import EditProfileModal from "../../../../components/EditProviderProfileModal";
 import apiRoutes from "@/app/config/apiRoutes";
 import { useRouter } from "next/navigation";
+import AvailabilityStatusSelector from "@/app/components/AvailabilityStatusSelector";
+import { useProviderStatus } from "@/app/hooks/useProviderStatus";
 
 export enum PriceType {
   fixed = 1,
@@ -66,6 +68,7 @@ const ProfilePage = () => {
   const [error, setError] = useState<string | null>(null);
   const userId =
     localStorage.getItem("userId") || sessionStorage.getItem("userId");
+  const { status, updateStatus, isConnected } = useProviderStatus();
 
   const [profile, setProfile] = useState<ProviderProfile>({
     id: 0,
@@ -107,7 +110,7 @@ const ProfilePage = () => {
         }
 
         const data = await response.json();
-        setAllSkills(data || []); // Update allSkills with the response data
+        setAllSkills(data || []); 
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "An unknown error occurred"
@@ -375,6 +378,18 @@ const ProfilePage = () => {
           </label>
         </div>
         <h2 className="mt-4 text-xl font-semibold">{profile.displayName}</h2>
+
+        <div className="w-full mt-6 px-6">
+          <AvailabilityStatusSelector
+            status={status}
+            onStatusChange={updateStatus}
+          />
+          {!isConnected && (
+            <div className="text-yellow-600 text-sm mt-2">
+              Status updates unavailable. Check your connection.
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-4 mb-6">

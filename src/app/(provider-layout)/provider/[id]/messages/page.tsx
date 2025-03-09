@@ -1,41 +1,51 @@
-import React from "react";
-import MessageList from "../../../../components/MessageList";
+"use client";
+import React, { useEffect, useState } from "react";
+import MessageList from "@/app/components/ProviderMessageList";
+import apiRoutes from "@/app/config/apiRoutes";
 
-const Page: React.FC = () => {
-  const messages = [
-    {
-      id: "1",
-      sender: "John Doe",
-      text: "Hello, how are you?",
-      date: "2024-11-09 10:00 AM",
-      isRead: false,
-      isSent: true,
-      isDelivered: true,
-    },
-    {
-      id: "2",
-      sender: "Jane Smith",
-      text: "Just checking in on you!",
-      date: "2024-11-08 8:30 PM",
-      isRead: true,
-      isSent: true,
-      isDelivered: true,
-    },
-    {
-      id: "3",
-      sender: "Admin",
-      text: "Your account has been updated.",
-      date: "2024-11-07 2:00 PM",
-      isRead: true,
-      isSent: false,
-      isDelivered: true,
-    },
-  ];
+const Page = () => {
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const userId =
+    typeof window !== "undefined"
+      ? localStorage.getItem("userId") || sessionStorage.getItem("userId")
+      : null;
+
+  const currentUserId = userId;
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const response = await fetch(apiRoutes.getUserChat);
+        if (!response.ok) {
+          throw new Error("Failed to fetch conversations");
+        }
+        const data = await response.json();
+        setConversations(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, [currentUserId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-gray-50 flex-1 ml-16 md:ml-96">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">All Messages</h1>
-      <MessageList messages={messages} />
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-xl font-bold mb-4">Messages</h1>
+      <MessageList conversations={conversations} />
     </div>
   );
 };

@@ -13,11 +13,18 @@ import {
   Input,
   Dropdown,
   Menu,
+  Badge,
 } from "antd";
 import apiRoutes from "@/app/config/apiRoutes";
-import { CompletedService, Service } from "@/app/types/types";
+import {
+  AvailabilityStatus,
+  CompletedService,
+  Service,
+} from "@/app/types/types";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { HubConnectionBuilder } from "@microsoft/signalr";
+import { useProviderStatus } from "@/app/hooks/useProviderStatus";
 
 interface Review {
   id: number;
@@ -30,6 +37,7 @@ interface Review {
 
 const ServiceProviderProfile: React.FC = () => {
   const router = useRouter();
+  const { status: providerStatus } = useProviderStatus();
   const { id } = useParams();
   const [providerData, setProviderData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"services" | "portfolio">(
@@ -46,8 +54,6 @@ const ServiceProviderProfile: React.FC = () => {
   const [selectedTime, setSelectedTime] = useState<any>(null);
   const userId =
     localStorage.getItem("userId") || sessionStorage.getItem("userId");
-
-  // New state for portfolio and reviews
   const [selectedPortfolioService, setSelectedPortfolioService] =
     useState<CompletedService | null>(null);
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
@@ -57,8 +63,8 @@ const ServiceProviderProfile: React.FC = () => {
     comment: "",
   });
   const [existingReview, setExistingReview] = useState<Review | null>(null);
+  const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
 
-  // When opening the modal for editing
   const handleEditClick = (review: Review) => {
     setExistingReview(review);
     setNewReview({
@@ -68,7 +74,6 @@ const ServiceProviderProfile: React.FC = () => {
     setIsReviewModalOpen(true);
   };
 
-  // When closing the modal
   const handleModalClose = () => {
     setIsReviewModalOpen(false);
     setNewReview({ rating: 0, comment: "" });
@@ -97,7 +102,6 @@ const ServiceProviderProfile: React.FC = () => {
     fetchProviderData();
   }, [id, providerData]);
 
-  // Existing service modal handlers
   const showServiceModal = (service: Service) => {
     setSelectedService(service);
     setIsModalOpen(true);
@@ -108,7 +112,6 @@ const ServiceProviderProfile: React.FC = () => {
     setSelectedService(null);
   };
 
-  // Portfolio modal handlers
   const showPortfolioModal = (service: CompletedService) => {
     setSelectedPortfolioService(service);
     setIsPortfolioModalOpen(true);
@@ -145,7 +148,6 @@ const ServiceProviderProfile: React.FC = () => {
         throw new Error("Failed to add review");
       }
 
-      // Refresh the data
       const updatedResponse = await fetch(
         `${apiRoutes.getPublicProviderProfile}/${id}`
       );
@@ -232,9 +234,8 @@ const ServiceProviderProfile: React.FC = () => {
       okType: "danger",
       cancelText: "No",
       onOk: async () => {
-        // Optimistic update: remove review immediately
         setSelectedPortfolioService((prevState) => {
-          if (prevState === null) return null; // Handle case where prevState might be null
+          if (prevState === null) return null;
 
           return {
             ...prevState,
@@ -267,13 +268,12 @@ const ServiceProviderProfile: React.FC = () => {
             content: "Failed to delete your review. Please try again.",
           });
 
-          // Rollback optimistic update if the request fails
           setSelectedPortfolioService((prevState) => {
-            if (prevState === null) return null; // Handle case where prevState might be null
+            if (prevState === null) return null;
 
             return {
               ...prevState,
-              reviews: [...prevState.reviews, reviewToDelete], // Add back the review
+              reviews: [...prevState.reviews, reviewToDelete],
             };
           });
         }
@@ -281,14 +281,33 @@ const ServiceProviderProfile: React.FC = () => {
     });
   };
 
-  // Existing booking handlers
   const openDateTimeModal = () => {
-    setIsModalOpen(false);
-    setIsDateTimeModalOpen(true);
+    // Check provider availability first
+    if (
+      providerStatus === AvailabilityStatus.Offline ||
+      providerStatus === AvailabilityStatus.Busy ||
+      providerStatus === AvailabilityStatus.Away
+    ) {
+      setIsAvailabilityModalOpen(true);
+    } else {
+      // Provider is available, proceed with booking
+      setIsModalOpen(false);
+      setIsDateTimeModalOpen(true);
+    }
   };
 
   const closeDateTimeModal = () => {
     setIsDateTimeModalOpen(false);
+  };
+
+  const closeAvailabilityModal = () => {
+    setIsAvailabilityModalOpen(false);
+  };
+
+  const proceedWithBookingAnyway = () => {
+    setIsAvailabilityModalOpen(false);
+    setIsModalOpen(false);
+    setIsDateTimeModalOpen(true);
   };
 
   const handleDateChange = (date: any) => {
@@ -314,6 +333,8 @@ const ServiceProviderProfile: React.FC = () => {
         serviceId: selectedService.id,
         date: selectedDate.format("YYYY-MM-DD"),
         time: selectedTime.format("HH:mm"),
+        // Include provider status for the booking
+        providerStatusAtBooking: providerStatus,
       };
 
       const response = await fetch(apiRoutes.createBooking, {
@@ -350,13 +371,43 @@ const ServiceProviderProfile: React.FC = () => {
     return <div>Loading...</div>;
   }
 
+  const getStatusDetails = (status: AvailabilityStatus) => {
+    switch (status) {
+      case AvailabilityStatus.Available:
+        return {
+          color: "green",
+          text: "Available",
+          description: "Provider is ready to take new services",
+        };
+      case AvailabilityStatus.Busy:
+        return {
+          color: "yellow",
+          text: "Busy",
+          description: "Provider is currently working on services",
+        };
+      case AvailabilityStatus.Offline:
+        return {
+          color: "default",
+          text: "Offline",
+          description: "Provider is not accepting services",
+        };
+      case AvailabilityStatus.Away:
+        return {
+          color: "blue",
+          text: "Away",
+          description: "Provider will respond later",
+        };
+    }
+  };
+
+  const statusDetails = getStatusDetails(providerStatus);
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <div className="w-full max-w-4xl mx-auto bg-gray-50 flex-1 ml-16 md:ml-96">
-        {/* Provider Info */}
         <div className="bg-white p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between">
           <div className="flex items-center">
-            <div className="relative">
+            <div className="relative flex flex-col gap-2">
               <Image
                 src={providerData.profilePictureUrl}
                 alt="Service Provider"
@@ -364,9 +415,35 @@ const ServiceProviderProfile: React.FC = () => {
                 height={96}
                 className="rounded-full w-16 h-16 sm:w-24 sm:h-24 object-cover"
               />
-              <FaCheck className="absolute bottom-0 right-0 text-green-500 bg-white rounded-full p-1" />
+
+              <div className="flex flex-col items-center sm:items-end mt-4 sm:mt-0">
+                <div
+                  className={`flex items-center px-3 py-1 rounded-full mb-2 ${
+                    statusDetails.color === "green"
+                      ? "bg-green-100 text-green-800"
+                      : statusDetails.color === "yellow"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : statusDetails.color === "blue"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  <div
+                    className={`w-3 h-3 rounded-full mr-2 ${
+                      statusDetails.color === "green"
+                        ? "bg-green-500"
+                        : statusDetails.color === "yellow"
+                        ? "bg-yellow-500"
+                        : statusDetails.color === "blue"
+                        ? "bg-blue-500"
+                        : "bg-gray-500"
+                    }`}
+                  ></div>
+                  <span className="font-medium">{statusDetails.text}</span>
+                </div>
+              </div>
             </div>
-            <div className="ml-4">
+            <div className="ml-4 items-center">
               <h2 className="text-xl sm:text-2xl font-bold">
                 {providerData.displayName}
               </h2>
@@ -525,6 +602,54 @@ const ServiceProviderProfile: React.FC = () => {
           )}
         </Modal>
 
+        {/* Availability Warning Modal */}
+        <Modal
+          title={null} // Remove the default title to create our own custom header
+          open={isAvailabilityModalOpen}
+          onCancel={closeAvailabilityModal}
+          className="rounded-lg overflow-hidden"
+          bodyStyle={{ padding: "24px" }}
+          footer={[
+            <Button
+              key="cancel"
+              onClick={closeAvailabilityModal}
+              className="border border-gray-300 hover:bg-gray-50 text-gray-700"
+            >
+              Cancel
+            </Button>,
+            <Button
+              key="proceed"
+              type="primary"
+              onClick={proceedWithBookingAnyway}
+              className="bg-blue-600 hover:bg-blue-700 border-blue-600"
+            >
+              Continue Anyway
+            </Button>,
+          ]}
+        >
+          <div className="py-2">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <div
+                className={`w-3 h-3 rounded-full mr-3 ${
+                  statusDetails.color === "yellow"
+                    ? "bg-yellow-500"
+                    : statusDetails.color === "blue"
+                    ? "bg-blue-500"
+                    : "bg-gray-500"
+                }`}
+              ></div>
+              Provider is currently {statusDetails.text}
+            </h3>
+            <p className="text-gray-600 mb-3">
+              {statusDetails.description}. Your booking request may take longer
+              to be processed.
+            </p>
+            <p className="text-gray-700 font-medium">
+              Do you want to continue with your booking request anyway?
+            </p>
+          </div>
+        </Modal>
+
         {/* Portfolio Modal */}
         <Modal
           open={isPortfolioModalOpen}
@@ -627,7 +752,6 @@ const ServiceProviderProfile: React.FC = () => {
           )}
         </Modal>
 
-        {/* Review Modal */}
         {/* Review Modal */}
         <Modal
           title={existingReview ? "Edit Review" : "Add Review"}

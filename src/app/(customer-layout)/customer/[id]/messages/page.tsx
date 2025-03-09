@@ -1,49 +1,51 @@
 "use client";
-import React from "react";
-import MessageList from "@/app/components/MessageList";
-import { useChat } from "../../../../hooks/useChat";
+import React, { useEffect, useState } from "react";
+import apiRoutes from "@/app/config/apiRoutes";
+import CustomerMessageList from "@/app/components/CustomerMessageList";
 
-const Page: React.FC = () => {
- 
+const Page = () => {
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   const userId =
-  typeof window !== "undefined"
-    ? localStorage.getItem("userId") || sessionStorage.getItem("userId")
-    : null;
+    typeof window !== "undefined"
+      ? localStorage.getItem("userId") || sessionStorage.getItem("userId")
+      : null;
 
-  const { messages, loading, error } = useChat(userId);
+  const currentUserId = userId;
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const response = await fetch(apiRoutes.getProviderchat);
+        if (!response.ok) {
+          throw new Error("Failed to fetch conversations");
+        }
+        const data = await response.json();
+        setConversations(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, [currentUserId]);
 
   if (loading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   if (error) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-600">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
+    return <div>Error: {error}</div>;
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-gray-50 flex-1 ml-16 md:ml-96">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">All Messages</h1>
-      <MessageList 
-        messages={messages} 
-        currentUserId={userId} 
-      />
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-xl font-bold mb-4">Messages</h1>
+      <CustomerMessageList conversations={conversations} />
     </div>
   );
 };

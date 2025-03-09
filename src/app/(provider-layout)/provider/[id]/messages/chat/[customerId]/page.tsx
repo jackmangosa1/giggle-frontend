@@ -6,7 +6,7 @@ import ChatDetail from "@/app/components/ChatDetail";
 
 const ChatPage = () => {
   const params = useParams();
-  const receiverId = params.providerId as string;
+  const receiverId = params.customerId as string;
   const userId =
     typeof window !== "undefined"
       ? localStorage.getItem("userId") || sessionStorage.getItem("userId")
@@ -16,11 +16,12 @@ const ChatPage = () => {
 
   useEffect(() => {
     if (userId && receiverId) {
-      // fetchChatHistory(userId, "4609a63b-c6e7-49ec-bd06-ad296a2ef926");
+      // Load chat history when the page loads
+      // You can add this functionality to your useChat hook if needed
     }
   }, [userId, receiverId]);
 
-  console.log(receiverId, userId);
+  // console.log(receiverId);
 
   return (
     <ChatDetail

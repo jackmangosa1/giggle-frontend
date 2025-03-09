@@ -123,7 +123,11 @@ const Page = () => {
         storage.setItem("token", data.token);
         storage.setItem("userId", data.userId);
         storage.setItem("username", data.userName);
-        router.push("/");
+        if (data.roles[0] == "Provider") {
+          router.push(`/provider/${data.userId}`);
+        } else {
+          router.push("/");
+        }
       }
     } catch (error) {
       setErrors({ email: "An unexpected error occurred" });

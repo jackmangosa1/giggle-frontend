@@ -1,21 +1,29 @@
 import { IconType } from "react-icons";
-// export interface Message {
-//   id: string;
-//   senderId: string;
-//   text: string;
-//   date: string;
-//   isRead: boolean;
-//   isSent: boolean;
-//   isDelivered: boolean;
-// }
-export interface Message {
+export enum AvailabilityStatus {
+  Available = 0,
+  Busy = 1,
+  Offline = 2,
+  Away = 3
+}
+
+export type Conversation = {
+  senderId: string;
+  senderName: string;
+  senderProfilePicture: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  hasUnreadMessages: boolean;
+  messages: Message[];
+};
+
+export type Message = {
   id: number;
   senderId: string;
   receiverId: string;
   content: string;
   sentAt: string;
   isRead: boolean;
-}
+};
 
 
 export enum BookingStatus {

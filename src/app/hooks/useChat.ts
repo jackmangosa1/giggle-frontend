@@ -1,5 +1,5 @@
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import apiRoutes from "../config/apiRoutes";
 
 interface Message {
@@ -37,8 +37,8 @@ export const useChat = (currentUserId: string | null) => {
         .then(() => {
           setLoading(false);
 
-          // Set up message handlers
           connection.on("ReceiveMessage", (message: Message) => {
+            console.log("Received message with sentAt:", message.sentAt);
             setMessages((prev) => [...prev, message]);
           });
 
@@ -64,6 +64,11 @@ export const useChat = (currentUserId: string | null) => {
   const sendMessage = async (receiverId: string, content: string) => {
     if (connection) {
       try {
+        console.log("Sending message with:", {
+          currentUserId,
+          receiverId,
+          content,
+        });
         await connection.invoke(
           "SendMessage",
           currentUserId,
@@ -76,13 +81,42 @@ export const useChat = (currentUserId: string | null) => {
     }
   };
 
-  const loadChatHistory = async (otherUserId: string) => {
-    if (connection) {
-      try {
-        await connection.invoke("LoadChatHistory", currentUserId, otherUserId);
-      } catch (err) {
-        setError("Failed to load chat history");
+  // const loadChatHistory = async (otherUserId: string) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${apiRoutes.getChatHistory}?userId1=${currentUserId}&userId2=${otherUserId}`
+  //     );
+  //     if (!response.ok) throw new Error("Failed to load chat history");
+
+  //     const data = await response.json();
+  //     setMessages(data);
+  //   } catch (err) {
+  //     setError("Failed to load chat history");
+  //   }
+  // };
+
+  const fetchChatHistory = async (userId1: string, userId2: string) => {
+    try {
+      setLoading(true);
+      console.log(`Fetching chat history for user: ${userId1} with ${userId2}`);
+
+      const response = await fetch(
+        `${apiRoutes.getChatHistory}?userId1=${userId1}&userId2=${userId2}`
+      );
+
+      console.log("Response status:", response.status);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch chat history: ${response.statusText}`);
       }
+
+      const history = await response.json();
+      console.log("Fetched messages:", history);
+      setMessages(history);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load chat history");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,8 +135,8 @@ export const useChat = (currentUserId: string | null) => {
     loading,
     error,
     sendMessage,
-    loadChatHistory,
+    //loadChatHistory,
+    fetchChatHistory,
     markAsRead,
-    connection,
   };
 };

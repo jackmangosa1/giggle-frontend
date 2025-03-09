@@ -44,6 +44,12 @@ const apiRoutes = {
   getChatHistory: `${API_BASE_URL}/api/customers/messages/history`,
   markMessagesAsread: `${API_BASE_URL}/api/customers/messages/mark-as-read`,
   getUnreadMessagesCount: `${API_BASE_URL}/api/customers/messages/unread-count`,
+  getChatData: `${API_BASE_URL}/api/customers/profile`,
+  getPublicProviderData: `${API_BASE_URL}/api/providers/profile`,
+  getUserChat: `${API_BASE_URL}/api/chat/chats/${userId}`,
+  getProviderchat: `${API_BASE_URL}/api/chat/chats/provider/${userId}`,
+  getReceiverData: `${API_BASE_URL}/api/chat/receiver`,
+  providerStatusHub: `${API_BASE_URL}/ProviderStatusHub`,
 };
 
 export default apiRoutes;
