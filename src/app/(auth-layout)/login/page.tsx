@@ -123,7 +123,7 @@ const Page = () => {
         storage.setItem("token", data.token);
         storage.setItem("userId", data.userId);
         storage.setItem("username", data.userName);
-        if (data.roles[0] == "Provider") {
+        if (data.roles[0] === "Provider") {
           router.push(`/provider/${data.userId}`);
         } else {
           router.push("/");

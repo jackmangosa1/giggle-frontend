@@ -19,6 +19,7 @@ import {
   AiOutlineArrowUp,
   AiOutlineArrowDown,
   AiOutlineCheckCircle,
+  AiOutlineMessage,
 } from "react-icons/ai";
 import apiRoutes from "@/app/config/apiRoutes";
 import { useRouter } from "next/navigation";
@@ -48,6 +49,7 @@ const StatusMap = {
 interface Booking {
   bookingId: number;
   customerName: string;
+  customerId: string;
   serviceName: string;
   price: number;
   date: string;
@@ -64,6 +66,11 @@ const getBookingStatusEnum = (
   }
   return BookingStatus[status as keyof typeof BookingStatus];
 };
+
+const userId =
+  typeof window !== "undefined"
+    ? localStorage.getItem("userId") || sessionStorage.getItem("userId")
+    : null;
 
 const Page: React.FC = () => {
   const router = useRouter();
@@ -223,11 +230,11 @@ const Page: React.FC = () => {
               }
               loading={isUpdating}
               disabled={isUpdating}
-              className="bg-green-500 hover:bg-green-600"
             >
               Approve
             </Button>
             <Button
+              type="default"
               danger
               icon={<AiOutlineClose />}
               onClick={() =>
@@ -237,6 +244,17 @@ const Page: React.FC = () => {
               disabled={isUpdating}
             >
               Reject
+            </Button>
+            <Button
+              type="link"
+              icon={<AiOutlineMessage />}
+              onClick={() =>
+                router.push(
+                  `/provider/${userId}/messages/chat/${booking.customerId}`
+                )
+              }
+            >
+              Chat
             </Button>
           </div>
         );
@@ -250,7 +268,6 @@ const Page: React.FC = () => {
             }
             loading={isUpdating}
             disabled={isUpdating}
-            className="bg-green-500 hover:bg-green-600"
           >
             Complete
           </Button>
@@ -258,7 +275,7 @@ const Page: React.FC = () => {
       case StatusMap[BookingStatus.Confirmed]:
         return (
           <Button
-            type="primary"
+            type="dashed"
             onClick={() =>
               router.push(`/provider/${bookingId}/create/portfolio`)
             }
@@ -266,8 +283,6 @@ const Page: React.FC = () => {
             Create Portfolio
           </Button>
         );
-      case StatusMap[BookingStatus.Rejected]:
-        return null;
       default:
         return null;
     }
