@@ -110,7 +110,7 @@ const ProfilePage = () => {
         }
 
         const data = await response.json();
-        setAllSkills(data || []); 
+        setAllSkills(data || []);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "An unknown error occurred"
@@ -356,7 +356,7 @@ const ProfilePage = () => {
             src={
               profileImage
                 ? URL.createObjectURL(profileImage)
-                : profile.profilePictureUrl || DefaultProfileImage
+                : profile.profilePictureUrl ?? ""
             }
             alt="Profile"
             width={96}

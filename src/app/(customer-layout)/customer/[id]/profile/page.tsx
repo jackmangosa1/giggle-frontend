@@ -253,7 +253,7 @@ const Page = () => {
         <div className="flex flex-col items-center py-6 bg-white rounded-lg shadow-sm">
           <div className="relative">
             <Image
-              src={profile.profilePictureUrl || CleaningImage}
+              src={profile.profilePictureUrl ?? ""}
               alt="Profile"
               width={96}
               height={96}

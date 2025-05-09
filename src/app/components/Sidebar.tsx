@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { AiOutlineMenu } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import MenuItem from "../components/MenuItem";
-import { MdWorkOutline, MdMiscellaneousServices } from "react-icons/md";
+
 
 interface SubMenuItem {
   id: string;

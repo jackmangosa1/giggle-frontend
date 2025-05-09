@@ -46,15 +46,19 @@ const Page = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    if (touched[name]) {
-      const fieldErrors = validateField(name, value);
-      setErrors((prev) => ({ ...prev, ...fieldErrors }));
-    }
+    setTouched((prev) => ({ ...prev, [name]: true }));
+
+    const fieldErrors = validateField(name, value);
+    setErrors((prev) => ({
+      ...prev,
+      [name]: fieldErrors[name as keyof Errors],
+    }));
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {

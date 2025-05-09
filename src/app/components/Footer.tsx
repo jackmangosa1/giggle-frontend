@@ -19,8 +19,9 @@ const Footer = () => {
         </div>
 
         {/* Links */}
+        {/* 
         <div className="grid grid-cols-2 gap-y-8 gap-x-12 text-center sm:grid-cols-4 md:text-left">
-          {/* Services */}
+       
           <div>
             <h3 className="text-lg font-medium text-gray-200 mb-3">Services</h3>
             <ul className="space-y-2 text-gray-400">
@@ -39,7 +40,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Company */}
+      
           <div>
             <h3 className="text-lg font-medium text-gray-200 mb-3">Company</h3>
             <ul className="space-y-2 text-gray-400">
@@ -58,7 +59,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Support */}
           <div>
             <h3 className="text-lg font-medium text-gray-200 mb-3">Support</h3>
             <ul className="space-y-2 text-gray-400">
@@ -77,7 +77,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Social Media */}
+      
           <div>
             <h3 className="text-lg font-medium text-gray-200 mb-3">
               Follow Us
@@ -110,7 +110,9 @@ const Footer = () => {
               ))}
             </div>
           </div>
-        </div>
+        </div> 
+        
+        */}
 
         {/* Bottom Note */}
         <div className="pt-8 text-center text-gray-500 border-t border-gray-700">

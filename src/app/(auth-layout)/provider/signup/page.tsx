@@ -61,6 +61,7 @@ const Page = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -68,7 +69,13 @@ const Page = () => {
 
     if (touched[name]) {
       const fieldErrors = validateField(name, value);
-      setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      setErrors((prev) => {
+        const updatedErrors = { ...prev, ...fieldErrors };
+        if (!fieldErrors[name as keyof Errors]) {
+          delete updatedErrors[name as keyof Errors];
+        }
+        return updatedErrors;
+      });
     }
   };
 
@@ -106,7 +113,6 @@ const Page = () => {
       setLoading(true);
       message.loading({ content: "Creating account...", key: "signup" });
 
-      // Send sign-up request to the backend
       const response = await fetch(apiRoutes.signupProvider, {
         method: "POST",
         headers: {
@@ -122,11 +128,13 @@ const Page = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrors({ email: data.error || "Failed to sign up" });
-        message.error({
-          content: data.error || "Failed to sign up",
-          key: "signup",
-        });
+        const errorMessage =
+          typeof data === "string"
+            ? data
+            : data?.error || "Email already in use or failed to sign up";
+
+        setErrors({ email: errorMessage });
+        setTouched((prev) => ({ ...prev, email: true }));
       } else {
         message.success({
           content: "Account created successfully! Please log in.",
