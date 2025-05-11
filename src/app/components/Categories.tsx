@@ -58,12 +58,6 @@ const Categories = () => {
           </div>
         ))}
       </div>
-
-      <div className="mt-16 text-center">
-        <button className="px-8 py-3 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium">
-          View All Categories
-        </button>
-      </div>
     </section>
   );
 };

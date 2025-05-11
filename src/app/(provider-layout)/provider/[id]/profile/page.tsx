@@ -3,8 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FiCamera } from "react-icons/fi";
 import { LiaToolsSolid } from "react-icons/lia";
 import Image from "next/image";
-import { message, Modal } from "antd";
-import DefaultProfileImage from "../../../../assets/cleaning.jpg";
+import { message, Modal, Empty, Avatar } from "antd";
 import PortfolioCard from "../../../../components/ProviderPortfolioCard";
 import ServiceCard from "../../../../components/ProviderServiceCard";
 import EditProfileModal from "../../../../components/EditProviderProfileModal";
@@ -24,6 +23,7 @@ interface ProviderProfile {
   profilePictureUrl?: string;
   userName: string;
   email: string;
+  phoneNumber: string;
 }
 
 export interface Service {
@@ -77,6 +77,7 @@ const ProfilePage = () => {
     skills: [],
     userName: "",
     email: "",
+    phoneNumber: "",
   });
 
   const [services, setServices] = useState<Service[]>([]);
@@ -88,6 +89,7 @@ const ProfilePage = () => {
     displayName: "",
     bio: "",
     skills: [],
+    phoneNumber: "",
   });
 
   const [profileImage, setProfileImage] = useState<File | null>(null);
@@ -155,6 +157,7 @@ const ProfilePage = () => {
           profilePictureUrl: data.profilePictureUrl,
           userName: data.userName,
           email: data.email,
+          phoneNumber: data.phoneNumber,
         });
 
         setServices(data.services || []);
@@ -164,6 +167,7 @@ const ProfilePage = () => {
           displayName: data.displayName,
           bio: data.bio,
           skills: data.skills,
+          phoneNumber: data.phoneNumber,
         });
 
         setIsLoading(false);
@@ -191,6 +195,15 @@ const ProfilePage = () => {
         });
 
         if (!response.ok) {
+          const data = await response.json();
+
+          // If it's the specific "No completed services found" message,
+          // treat it as an empty array rather than an error
+          if (data.message === "No completed services found") {
+            setCompletedServices([]);
+            return;
+          }
+
           throw new Error("Failed to fetch completed services.");
         }
 
@@ -215,6 +228,11 @@ const ProfilePage = () => {
   };
 
   const handleSaveProfile = async () => {
+    if (!editForm.phoneNumber || editForm.phoneNumber.trim() === "") {
+      message.error("Phone number is required.");
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("DisplayName", editForm.displayName || "");
@@ -223,6 +241,8 @@ const ProfilePage = () => {
       editForm.skills?.forEach((skill, index) => {
         formData.append(`SkillNames[${index}]`, skill);
       });
+
+      formData.append("PhoneNumber", editForm.phoneNumber);
 
       if (profileImage) {
         formData.append("imageFile", profileImage);
@@ -249,6 +269,7 @@ const ProfilePage = () => {
       setActiveModal(null);
     } catch (err) {
       console.error("Profile update failed:", err);
+      message.error("An error occurred while updating the profile.");
     }
   };
 
@@ -352,17 +373,25 @@ const ProfilePage = () => {
     <div className="w-full max-w-4xl mx-auto bg-gray-50 p-6">
       <div className="flex flex-col items-center py-6 bg-white rounded-lg shadow-sm mb-6">
         <div className="relative">
-          <Image
-            src={
-              profileImage
-                ? URL.createObjectURL(profileImage)
-                : profile.profilePictureUrl ?? ""
-            }
-            alt="Profile"
-            width={96}
-            height={96}
-            className="w-24 h-24 rounded-full object-cover"
-          />
+          {profileImage || profile.profilePictureUrl ? (
+            <Image
+              src={
+                profileImage
+                  ? URL.createObjectURL(profileImage)
+                  : profile.profilePictureUrl || ""
+              }
+              alt="Profile"
+              width={96}
+              height={96}
+              className="w-24 h-24 rounded-full object-cover"
+            />
+          ) : (
+            <Avatar size={96} className="bg-blue-500">
+              {profile.displayName
+                ? profile.userName.charAt(0).toUpperCase()
+                : "U"}
+            </Avatar>
+          )}
           <input
             type="file"
             accept="image/*"
@@ -448,14 +477,20 @@ const ProfilePage = () => {
 
         {activeTab === "service" && (
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service) => (
-              <ServiceCard
-                key={service.id}
-                service={service}
-                onEdit={handleEditService}
-                onDelete={handleDeleteService}
-              />
-            ))}
+            {services.length > 0 ? (
+              services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  onEdit={handleEditService}
+                  onDelete={handleDeleteService}
+                />
+              ))
+            ) : (
+              <div className="col-span-full">
+                <Empty description="No services found" />
+              </div>
+            )}
           </div>
         )}
 
@@ -471,7 +506,9 @@ const ProfilePage = () => {
                 />
               ))
             ) : (
-              <p className="text-gray-500">No completed services available.</p>
+              <div className="col-span-full">
+                <Empty description="No completed services found" />
+              </div>
             )}
           </div>
         )}

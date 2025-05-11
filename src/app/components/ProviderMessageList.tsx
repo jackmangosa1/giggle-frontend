@@ -57,7 +57,15 @@ const MessageList: React.FC<MessageListProps> = ({ conversations }) => {
             onClick={() => handleOpenChat(conv.messages[0].senderId)}
           >
             <List.Item.Meta
-              avatar={<Avatar src={conv.senderProfilePicture} />}
+              avatar={
+                conv.senderProfilePicture ? (
+                  <Avatar src={conv.senderProfilePicture} />
+                ) : (
+                  <Avatar className="bg-blue-500">
+                    {conv.senderName?.charAt(0).toUpperCase()}
+                  </Avatar>
+                )
+              }
               title={
                 <div className="flex justify-between">
                   <span className="font-semibold">{conv.senderName}</span>

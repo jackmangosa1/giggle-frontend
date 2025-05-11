@@ -13,7 +13,8 @@ import {
   Input,
   Dropdown,
   Menu,
-  Badge,
+  Avatar,
+  Empty,
 } from "antd";
 import apiRoutes from "@/app/config/apiRoutes";
 import {
@@ -23,8 +24,11 @@ import {
 } from "@/app/types/types";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { HubConnectionBuilder } from "@microsoft/signalr";
 import { useProviderStatus } from "@/app/hooks/useProviderStatus";
+import { IoMdClose } from "react-icons/io";
+import { AiOutlineUser } from "react-icons/ai";
+import { MdOutlineEdit } from "react-icons/md";
+import { MdDeleteOutline } from "react-icons/md";
 
 interface Review {
   id: number;
@@ -65,20 +69,29 @@ const ServiceProviderProfile: React.FC = () => {
   const [existingReview, setExistingReview] = useState<Review | null>(null);
   const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
 
-  const handleEditClick = (review: Review) => {
-    setExistingReview(review);
-    setNewReview({
-      rating: review.rating,
-      comment: review.comment,
-    });
-    setIsReviewModalOpen(true);
-  };
+  const [averageRating, setAverageRating] = useState<number>(0);
+  const [totalReviews, setTotalReviews] = useState<number>(0);
 
-  const handleModalClose = () => {
-    setIsReviewModalOpen(false);
-    setNewReview({ rating: 0, comment: "" });
-    setExistingReview(null);
-  };
+  useEffect(() => {
+    if (completedServices && completedServices.length > 0) {
+      let totalStars = 0;
+      let reviewCount = 0;
+
+      completedServices.forEach((service) => {
+        if (service.reviews && service.reviews.length > 0) {
+          service.reviews.forEach((review) => {
+            totalStars += review.rating;
+            reviewCount++;
+          });
+        }
+      });
+
+      setTotalReviews(reviewCount);
+      setAverageRating(
+        reviewCount > 0 ? parseFloat((totalStars / reviewCount).toFixed(1)) : 0
+      );
+    }
+  }, [completedServices]);
 
   useEffect(() => {
     const fetchProviderData = async () => {
@@ -282,7 +295,6 @@ const ServiceProviderProfile: React.FC = () => {
   };
 
   const openDateTimeModal = () => {
-    // Check provider availability first
     if (
       providerStatus === AvailabilityStatus.Offline ||
       providerStatus === AvailabilityStatus.Busy ||
@@ -290,7 +302,6 @@ const ServiceProviderProfile: React.FC = () => {
     ) {
       setIsAvailabilityModalOpen(true);
     } else {
-      // Provider is available, proceed with booking
       setIsModalOpen(false);
       setIsDateTimeModalOpen(true);
     }
@@ -333,7 +344,6 @@ const ServiceProviderProfile: React.FC = () => {
         serviceId: selectedService.id,
         date: selectedDate.format("YYYY-MM-DD"),
         time: selectedTime.format("HH:mm"),
-        // Include provider status for the booking
         providerStatusAtBooking: providerStatus,
       };
 
@@ -408,13 +418,17 @@ const ServiceProviderProfile: React.FC = () => {
         <div className="bg-white p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between">
           <div className="flex items-center">
             <div className="relative flex flex-col gap-2">
-              <Image
-                src={providerData.profilePictureUrl}
-                alt="Service Provider"
-                width={96}
-                height={96}
-                className="rounded-full w-16 h-16 sm:w-24 sm:h-24 object-cover"
-              />
+              {providerData.profilePictureUrl ? (
+                <div className="relative mt-5">
+                  <Avatar
+                    size={96}
+                    src={providerData.profilePictureUrl}
+                    className="border-2 border-gray-200"
+                  />
+                </div>
+              ) : (
+                <Avatar size={96} className="border-2 border-gray-200" />
+              )}
 
               <div className="flex flex-col items-center sm:items-end mt-4 sm:mt-0">
                 <div
@@ -443,15 +457,34 @@ const ServiceProviderProfile: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="ml-4 items-center">
-              <h2 className="text-xl sm:text-2xl font-bold">
+            <div className="ml-4">
+              <h2 className="text-xl sm:text-2xl font-bold mb-1">
                 {providerData.displayName}
               </h2>
-              <div className="flex items-center text-gray-500">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar key={i} className="mr-1 text-yellow-500" />
-                ))}
-                <span className="ml-2">(5)</span>
+              <div className="flex items-center">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <FaStar
+                      key={star}
+                      className={`${
+                        star <= Math.round(averageRating)
+                          ? "text-yellow-500"
+                          : "text-gray-300"
+                      }`}
+                      size={18}
+                    />
+                  ))}
+                </div>
+                <div className="ml-2 text-gray-600 font-medium">
+                  {averageRating > 0 ? (
+                    <span>
+                      {averageRating} ({totalReviews}{" "}
+                      {totalReviews === 1 ? "review" : "reviews"})
+                    </span>
+                  ) : (
+                    <span>No reviews yet</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -515,60 +548,99 @@ const ServiceProviderProfile: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
-          {activeTab === "services" &&
-            providerData.services.map((service: Service) => (
-              <div
-                key={service.id}
-                className="relative group cursor-pointer bg-white rounded-lg shadow-md overflow-hidden"
-                onClick={() => showServiceModal(service)}
-              >
-                <div className="relative group overflow-hidden">
-                  <Image
-                    src={service.mediaUrl ?? ""}
-                    alt={service.name}
-                    width={300}
-                    height={160}
-                    className="w-full h-40 object-cover transition-all duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black opacity-0 transition-all duration-300 group-hover:opacity-40" />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <FaSearchPlus className="text-white text-4xl" />
-                  </div>
-                </div>
-              </div>
-            ))}
-
-          {activeTab === "portfolio" && (
-            <div className="mt-6 grid gap-6">
-              {completedServices && completedServices.length > 0 ? (
-                completedServices.map((service) => (
-                  <div
-                    key={service.id}
-                    className="relative group cursor-pointer bg-white rounded-lg shadow-md overflow-hidden"
-                    onClick={() => showPortfolioModal(service)}
-                  >
-                    <div className="relative group overflow-hidden">
-                      <Image
-                        src={service.mediaUrl ?? ""}
-                        alt={service.description}
-                        width={500}
-                        height={160}
-                        className="w-full h-40 object-cover transition-all duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black opacity-0 transition-all duration-300 group-hover:opacity-40" />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <FaSearchPlus className="text-white text-4xl" />
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          {activeTab === "services" && (
+            <>
+              {providerData.services && providerData.services.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {providerData.services.map((service: Service) => (
+                    <div
+                      key={service.id}
+                      className="relative group cursor-pointer bg-white rounded-lg shadow-md overflow-hidden"
+                      onClick={() => showServiceModal(service)}
+                    >
+                      <div className="relative group overflow-hidden">
+                        {service.mediaUrl ? (
+                          <Image
+                            src={service.mediaUrl}
+                            alt={service.name}
+                            width={300}
+                            height={160}
+                            className="w-full h-40 object-cover transition-all duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-400">No image</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black opacity-0 transition-all duration-300 group-hover:opacity-40" />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <FaSearchPlus className="text-white text-4xl" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
-                <p className="text-gray-500">
-                  No completed services available.
-                </p>
+                <div className="py-12 flex flex-col items-center justify-center">
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={
+                      <span className="text-gray-500">
+                        No services available at the moment
+                      </span>
+                    }
+                  />
+                </div>
               )}
-            </div>
+            </>
+          )}
+
+          {activeTab === "portfolio" && (
+            <>
+              {completedServices && completedServices.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {completedServices.map((service) => (
+                    <div
+                      key={service.id}
+                      className="relative group cursor-pointer bg-white rounded-lg shadow-md overflow-hidden"
+                      onClick={() => showPortfolioModal(service)}
+                    >
+                      <div className="relative group overflow-hidden">
+                        {service.mediaUrl ? (
+                          <Image
+                            src={service.mediaUrl}
+                            alt={service.description}
+                            width={300}
+                            height={160}
+                            className="w-full h-40 object-cover transition-all duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-400">No image</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black opacity-0 transition-all duration-300 group-hover:opacity-40" />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <FaSearchPlus className="text-white text-4xl" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 flex flex-col items-center justify-center">
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={
+                      <span className="text-gray-500">
+                        No completed services in portfolio yet
+                      </span>
+                    }
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -576,35 +648,65 @@ const ServiceProviderProfile: React.FC = () => {
         <Modal
           open={isModalOpen}
           onCancel={closeServiceModal}
-          footer={[
-            <Button key="request" type="primary" onClick={openDateTimeModal}>
-              Request Service
-            </Button>,
-          ]}
+          footer={null}
+          width={700}
+          className="service-modal"
+          bodyStyle={{ padding: 0 }}
+          closeIcon={null}
         >
           {selectedService && (
-            <div className="space-y-4 mt-8">
-              <Image
-                src={selectedService.mediaUrl ?? ""}
-                alt={selectedService.name}
-                width={600}
-                height={240}
-                className="w-full h-60 object-cover rounded-lg"
-              />
-              <p className="text-base text-gray-700">{selectedService.name}</p>
-              <p className="text-base text-gray-700">
-                {selectedService.description}
-              </p>
-              <p className="text-xl font-semibold text-gray-900">
-                Price: ${selectedService.price}
-              </p>
+            <div>
+              <div className="relative">
+                <Image
+                  src={selectedService.mediaUrl ?? "/api/placeholder/600/240"}
+                  alt={selectedService.name}
+                  width={700}
+                  height={300}
+                  className="w-full h-64 object-cover"
+                />
+                <div className="absolute top-0 right-0 p-2">
+                  <Button
+                    type="text"
+                    icon={<IoMdClose />}
+                    onClick={closeServiceModal}
+                    className="bg-white/80 hover:bg-white text-gray-700 rounded-full"
+                  />
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {selectedService.name}
+                </h2>
+
+                <div className="border-t border-b border-gray-200 py-4 my-4">
+                  <p className="text-gray-700 leading-relaxed">
+                    {selectedService.description}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-gray-500 text-sm">Price</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ${selectedService.price}
+                    </p>
+                  </div>
+                  <Button
+                    type="primary"
+                    size="large"
+                    onClick={openDateTimeModal}
+                    className="bg-blue-600 hover:bg-blue-700 rounded-lg px-8"
+                  >
+                    Request Service
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </Modal>
 
         {/* Availability Warning Modal */}
         <Modal
-          title={null} // Remove the default title to create our own custom header
+          title={null}
           open={isAvailabilityModalOpen}
           onCancel={closeAvailabilityModal}
           className="rounded-lg overflow-hidden"
@@ -655,97 +757,140 @@ const ServiceProviderProfile: React.FC = () => {
           open={isPortfolioModalOpen}
           onCancel={closePortfolioModal}
           footer={null}
+          width={700}
+          className="portfolio-modal"
+          bodyStyle={{ padding: 0 }}
+          closeIcon={null}
         >
           {selectedPortfolioService && (
-            <div className="space-y-4 mt-8">
+            <div>
               <div className="relative">
                 <Image
-                  src={selectedPortfolioService.mediaUrl ?? ""}
+                  src={
+                    selectedPortfolioService.mediaUrl ??
+                    "/api/placeholder/600/300"
+                  }
                   alt={selectedPortfolioService.description}
-                  width={600}
-                  height={240}
-                  className="w-full h-96 object-cover rounded-lg"
+                  width={700}
+                  height={350}
+                  className="w-full h-72 object-cover"
                 />
-              </div>
-              <div className="flex justify-between items-center">
-                <p className="text-lg font-medium">
-                  {selectedPortfolioService.description}
-                </p>
-                {userId === selectedPortfolioService.userId && (
+                <div className="absolute top-0 right-0 p-2">
                   <Button
-                    type="primary"
-                    onClick={() => setIsReviewModalOpen(true)}
-                  >
-                    Add Review
-                  </Button>
-                )}
+                    type="text"
+                    icon={<IoMdClose />}
+                    onClick={closePortfolioModal}
+                    className="bg-white/80 hover:bg-white text-gray-700 rounded-full"
+                  />
+                </div>
               </div>
-
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold mb-4">Reviews</h3>
-                <div className="space-y-4">
-                  {selectedPortfolioService.reviews?.map((review: Review) => (
-                    <div key={review.id} className="border-b pb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <FaRegUserCircle
-                            className="text-gray-400"
-                            size={24}
-                          />
-                          <span className="font-medium">{review.userName}</span>
-                          <span className="text-sm text-gray-400">
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {userId === review.userId && (
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  key="edit"
-                                  onClick={(e) => {
-                                    e.domEvent.stopPropagation();
-                                    setExistingReview(review);
-                                    setNewReview({
-                                      rating: review.rating,
-                                      comment: review.comment,
-                                    });
-                                    setIsReviewModalOpen(true);
-                                  }}
-                                >
-                                  Edit
-                                </Menu.Item>
-                                <Menu.Item
-                                  key="delete"
-                                  danger
-                                  onClick={(e) => {
-                                    e.domEvent.stopPropagation();
-                                    handleDeleteReview(review.id);
-                                  }}
-                                >
-                                  Delete
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                          >
-                            <Button
-                              type="text"
-                              icon={<BsThreeDotsVertical />}
-                            />
-                          </Dropdown>
-                        )}
-                      </div>
-                      <div className="ml-8">
-                        <Rate disabled defaultValue={review.rating} />
-                        <p className="mt-2 text-gray-600">{review.comment}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {(!selectedPortfolioService.reviews ||
-                    selectedPortfolioService.reviews.length === 0) && (
-                    <p className="text-gray-500">No reviews yet.</p>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold">Project Details</h3>
+                  {userId === selectedPortfolioService.userId && (
+                    <Button
+                      type="primary"
+                      onClick={() => setIsReviewModalOpen(true)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Add Review
+                    </Button>
                   )}
+                </div>
+                <div className="border-t border-b border-gray-200 py-4 my-4">
+                  <p className="text-gray-700 leading-relaxed">
+                    {selectedPortfolioService.description}
+                  </p>
+                </div>
+
+                <div className="border-t pt-6 mt-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold">Reviews</h3>
+                  </div>
+
+                  <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+                    {selectedPortfolioService.reviews?.map((review: Review) => (
+                      <div
+                        key={review.id}
+                        className="border-b border-gray-100 pb-4 mb-4"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Avatar
+                              icon={<AiOutlineUser />}
+                              className="bg-blue-100 text-blue-600"
+                            />
+                            <div>
+                              <span className="font-medium block">
+                                {review.userName}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(
+                                  review.createdAt
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          {userId === review.userId && (
+                            <Dropdown
+                              overlay={
+                                <Menu>
+                                  <Menu.Item
+                                    key="edit"
+                                    onClick={(e) => {
+                                      e.domEvent.stopPropagation();
+                                      setExistingReview(review);
+                                      setNewReview({
+                                        rating: review.rating,
+                                        comment: review.comment,
+                                      });
+                                      setIsReviewModalOpen(true);
+                                    }}
+                                  >
+                                    <MdOutlineEdit className="mr-2" /> Edit
+                                  </Menu.Item>
+                                  <Menu.Item
+                                    key="delete"
+                                    danger
+                                    onClick={(e) => {
+                                      e.domEvent.stopPropagation();
+                                      handleDeleteReview(review.id);
+                                    }}
+                                  >
+                                    <MdDeleteOutline className="mr-2" /> Delete
+                                  </Menu.Item>
+                                </Menu>
+                              }
+                              trigger={["click"]}
+                            >
+                              <Button
+                                type="text"
+                                icon={<BsThreeDotsVertical />}
+                                className="text-gray-400 hover:text-gray-600"
+                              />
+                            </Dropdown>
+                          )}
+                        </div>
+                        <div className="ml-10">
+                          <Rate disabled defaultValue={review.rating} />
+                          <p className="mt-2 text-gray-600">{review.comment}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!selectedPortfolioService.reviews ||
+                      selectedPortfolioService.reviews.length === 0) && (
+                      <div className="text-center py-6">
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={
+                            <span className="text-gray-500">
+                              No reviews yet
+                            </span>
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -758,7 +903,7 @@ const ServiceProviderProfile: React.FC = () => {
           open={isReviewModalOpen}
           onCancel={() => {
             setIsReviewModalOpen(false);
-            setExistingReview(null); // Clear existing review when closing the modal
+            setExistingReview(null);
             setNewReview({ rating: 0, comment: "" });
           }}
           footer={[
@@ -766,7 +911,7 @@ const ServiceProviderProfile: React.FC = () => {
               key="cancel"
               onClick={() => {
                 setIsReviewModalOpen(false);
-                setExistingReview(null); // Clear existing review when closing the modal
+                setExistingReview(null);
                 setNewReview({ rating: 0, comment: "" });
               }}
             >

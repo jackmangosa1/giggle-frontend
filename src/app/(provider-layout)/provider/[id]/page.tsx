@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Table, Button, Badge, Card, Select, message } from "antd";
+import { Table, Button, Badge, Card, Select, message, Empty } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   LineChart,
@@ -20,6 +20,7 @@ import {
   AiOutlineArrowDown,
   AiOutlineCheckCircle,
   AiOutlineMessage,
+  AiOutlineInbox,
 } from "react-icons/ai";
 import apiRoutes from "@/app/config/apiRoutes";
 import { useRouter } from "next/navigation";
@@ -77,7 +78,6 @@ const Page: React.FC = () => {
   const [timeRange, setTimeRange] = useState<string>("6m");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [updatingBookingId, setUpdatingBookingId] = useState<number | null>(
     null
   );
@@ -96,6 +96,7 @@ const Page: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
+      setLoading(true);
       const response = await fetch(apiRoutes.getProviderStatistics);
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -114,11 +115,14 @@ const Page: React.FC = () => {
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       message.error("Failed to fetch dashboard data");
+    } finally {
+      setLoading(false);
     }
   };
 
   const getFilteredData = () => {
-    if (!dashboardData?.monthlyData) return [];
+    if (!dashboardData?.monthlyData || dashboardData.monthlyData.length === 0)
+      return [];
 
     const currentDate = new Date();
     const monthsToShow =
@@ -133,18 +137,34 @@ const Page: React.FC = () => {
     return dashboardData.monthlyData.slice(-monthsToShow);
   };
 
+  const hasChartData = () => {
+    const data = getFilteredData();
+    return data && data.length > 0;
+  };
+
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      setError(null);
       const response = await fetch(apiRoutes.getAllBookings);
-      if (!response.ok)
+
+      if (response.status === 404) {
+        // Handle the "No bookings found" response as a valid empty state
+        setBookings([]);
+        return;
+      }
+
+      if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       setBookings(Array.isArray(data) ? data : [data]);
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      setError("Failed to fetch bookings");
+      // Only show an error message for actual errors, not empty bookings
+      if (!(error instanceof Error && error.message.includes("404"))) {
+        message.error("Failed to fetch bookings");
+      }
       setBookings([]);
     } finally {
       setLoading(false);
@@ -472,6 +492,36 @@ const Page: React.FC = () => {
     },
   ];
 
+  const renderEmptyBookingState = () => (
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={
+        <div className="flex flex-col items-center">
+          <p className="text-base font-medium text-gray-500 mb-1">
+            No Bookings Yet
+          </p>
+          <p className="text-sm text-gray-400 text-center max-w-md mb-4">
+            You don't have any bookings yet. When customers book your services,
+            they will appear here.
+          </p>
+        </div>
+      }
+    />
+  );
+
+  const renderNoDataState = () => (
+    <div className="flex flex-col items-center justify-center py-12">
+      <AiOutlineInbox className="text-5xl text-gray-300 mb-4" />
+      <h3 className="text-lg font-medium text-gray-500 mb-2">
+        No Data Available
+      </h3>
+      <p className="text-gray-400 text-center max-w-md">
+        Your dashboard is currently empty. As you receive bookings and complete
+        services, your revenue data will appear here.
+      </p>
+    </div>
+  );
+
   return (
     <div className="p-6 w-full max-w-5xl mx-auto flex-1 ml-16 md:ml-96">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -491,7 +541,6 @@ const Page: React.FC = () => {
             <div>
               <p className="text-gray-500 text-sm">Total Bookings</p>
               <h3 className="text-2xl font-bold">
-                {" "}
                 {dashboardData?.totalBookings.toLocaleString() || 0}
               </h3>
             </div>
@@ -500,25 +549,32 @@ const Page: React.FC = () => {
             </div>
           </div>
         </Card>
-        <Card>
+        <Card className="shadow-md">
           <div className="flex items-center">
-            {dashboardData?.revenueGrowthPercentage &&
-            dashboardData?.revenueGrowthPercentage >= 0 ? (
-              <AiOutlineArrowUp className="text-4xl text-green-500" />
-            ) : (
-              <AiOutlineArrowDown className="text-4xl text-red-500" />
+            {dashboardData?.revenueGrowthPercentage !== undefined && (
+              <>
+                {dashboardData.revenueGrowthPercentage >= 0 ? (
+                  <AiOutlineArrowUp className="text-4xl text-green-500" />
+                ) : (
+                  <AiOutlineArrowDown className="text-4xl text-red-500" />
+                )}
+              </>
             )}
             <div className="ml-4">
               <p className="text-sm text-gray-500">Revenue Growth</p>
               <h2
                 className={`text-2xl font-bold ${
-                  dashboardData?.revenueGrowthPercentage &&
-                  dashboardData?.revenueGrowthPercentage >= 0
-                    ? "text-green-500"
-                    : "text-red-500"
+                  dashboardData?.revenueGrowthPercentage !== undefined
+                    ? dashboardData.revenueGrowthPercentage >= 0
+                      ? "text-green-500"
+                      : "text-red-500"
+                    : "text-gray-400"
                 }`}
               >
-                {dashboardData?.revenueGrowthPercentage || 0}%
+                {dashboardData?.revenueGrowthPercentage !== undefined
+                  ? dashboardData.revenueGrowthPercentage
+                  : 0}
+                %
               </h2>
             </div>
           </div>
@@ -542,37 +598,60 @@ const Page: React.FC = () => {
         className="mb-6 shadow-md"
       >
         <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={getFilteredData()}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Legend />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="revenue"
-                stroke="#8884d8"
-                name="Revenue ($)"
+          {loading ? (
+            <div className="h-full flex items-center justify-center">
+              <p>Loading chart data...</p>
+            </div>
+          ) : hasChartData() ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={getFilteredData()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip />
+                <Legend />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#8884d8"
+                  name="Revenue ($)"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="bookings"
+                  stroke="#82ca9d"
+                  name="Bookings"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center">
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <div className="flex flex-col items-center">
+                    <p className="text-base font-medium text-gray-500 mb-1">
+                      No Revenue Data
+                    </p>
+                    <p className="text-sm text-gray-400 text-center max-w-md">
+                      Start completing bookings to see your revenue and booking
+                      trends on this chart.
+                    </p>
+                  </div>
+                }
               />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="bookings"
-                stroke="#82ca9d"
-                name="Bookings"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </Card>
 
       <Card title="Recent Bookings" className="shadow-md">
-        {error ? (
-          <div className="text-red-500 mb-4">{error}</div>
-        ) : (
+        {loading ? (
+          <div className="py-8 text-center">Loading bookings...</div>
+        ) : bookings.length > 0 ? (
           <Table
             columns={columns}
             dataSource={bookings}
@@ -582,10 +661,11 @@ const Page: React.FC = () => {
               size: "small",
               showSizeChanger: false,
             }}
-            loading={loading}
             className="border rounded-lg overflow-hidden"
             size="middle"
           />
+        ) : (
+          <div className="py-8">{renderEmptyBookingState()}</div>
         )}
       </Card>
     </div>

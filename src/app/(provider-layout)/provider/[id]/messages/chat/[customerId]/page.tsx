@@ -21,8 +21,6 @@ const ChatPage = () => {
     }
   }, [userId, receiverId]);
 
-  // console.log(receiverId);
-
   return (
     <ChatDetail
       receiverId={receiverId}

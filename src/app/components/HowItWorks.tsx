@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   FaSearch,
@@ -8,8 +9,10 @@ import {
   FaStar,
   FaTools,
 } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 const HowItWorks = () => {
+  const router = useRouter();
   const steps = [
     {
       id: 1,
@@ -101,7 +104,10 @@ const HowItWorks = () => {
       </div>
 
       <div className="mt-16 text-center">
-        <button className="px-8 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 transition-all duration-300 text-sm font-medium shadow-sm hover:shadow-md">
+        <button
+          className="px-8 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 transition-all duration-300 text-sm font-medium shadow-sm hover:shadow-md"
+          onClick={() => router.push("/login")}
+        >
           Get Started Now
         </button>
       </div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiChevronLeft, FiSend } from "react-icons/fi";
 import Image from "next/image";
-import CleaningImage from "../assets/cleaning.jpg";
 import { Message } from "../types/types";
 import MessageStatus from "./MessageStatus";
 import apiRoutes from "../config/apiRoutes";
@@ -41,7 +40,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
         console.log(data);
         setReceiverData({
           fullName: data.name,
-          profilePictureUrl: data.profilePictureUrl || CleaningImage,
+          profilePictureUrl: data.profilePictureUrl,
         });
       } catch (error) {
         console.error("Error fetching customer data:", error);
@@ -69,7 +68,6 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
-      {/* Chat Header */}
       <div className="bg-white shadow-sm px-4 py-2 flex items-center space-x-4">
         <button
           onClick={() => window.history.back()}
@@ -78,13 +76,20 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
           <FiChevronLeft className="h-6 w-6 text-gray-700" />
         </button>
         <div className="flex items-center flex-1">
-          <Image
-            src={receiverData.profilePictureUrl}
-            alt={receiverId}
-            className="w-10 h-10 rounded-full object-cover"
-            width={40} // Optional: Specify width for better control
-            height={40} // Optional: Specify height for better control
-          />
+          {receiverData.profilePictureUrl ? (
+            <Image
+              src={receiverData.profilePictureUrl}
+              alt={receiverId}
+              className="w-10 h-10 rounded-full object-cover"
+              width={40}
+              height={40}
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-medium">
+              {receiverData.fullName?.charAt(0).toUpperCase() ?? "U"}
+            </div>
+          )}
+
           <div className="ml-3">
             <h2 className="font-semibold">
               {receiverData.fullName || receiverId}
@@ -93,7 +98,6 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
         </div>
       </div>
 
-      {/* Chat Messages */}
       <div className="flex-1 bg-gray-100 p-4 overflow-y-auto">
         <div className="space-y-4">
           {messages.map((msg, index) => (
@@ -125,7 +129,6 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
         </div>
       </div>
 
-      {/* Message Input */}
       <div className="bg-white p-4 flex items-center space-x-4">
         <input
           type="text"

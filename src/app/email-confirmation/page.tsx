@@ -11,7 +11,6 @@ const EmailConfirmation = () => {
   const message = searchParams.get("message");
   const [animate, setAnimate] = useState(true);
 
-  // Remove animation after 1 second
   useEffect(() => {
     const timer = setTimeout(() => setAnimate(false), 1000);
     return () => clearTimeout(timer);
