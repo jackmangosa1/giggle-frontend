@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Table, Button, Badge, Card, Select, message, Empty } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -21,9 +21,13 @@ import {
   AiOutlineCheckCircle,
   AiOutlineMessage,
   AiOutlineInbox,
+  AiOutlineFilePdf,
+  AiOutlineDownload,
 } from "react-icons/ai";
 import apiRoutes from "@/app/config/apiRoutes";
 import { useRouter } from "next/navigation";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 enum BookingStatus {
   Pending,
@@ -81,6 +85,8 @@ const Page: React.FC = () => {
   const [updatingBookingId, setUpdatingBookingId] = useState<number | null>(
     null
   );
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const dashboardRef = useRef<HTMLDivElement>(null);
 
   const [dashboardData, setDashboardData] = useState<{
     totalRevenue: number;
@@ -148,7 +154,6 @@ const Page: React.FC = () => {
       const response = await fetch(apiRoutes.getAllBookings);
 
       if (response.status === 404) {
-        // Handle the "No bookings found" response as a valid empty state
         setBookings([]);
         return;
       }
@@ -522,8 +527,228 @@ const Page: React.FC = () => {
     </div>
   );
 
+  const getReportTimeRangeName = () => {
+    switch (timeRange) {
+      case "1m":
+        return "Monthly";
+      case "3m":
+        return "Quarterly";
+      case "6m":
+        return "Bi-Annual";
+      case "1y":
+        return "Annual";
+      default:
+        return "Custom";
+    }
+  };
+
+  const generatePdfReport = async () => {
+    if (!dashboardRef.current) return;
+
+    try {
+      setGeneratingPdf(true);
+      message.loading({ content: "Preparing PDF report...", key: "pdfGen" });
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const reportTitle = `${getReportTimeRangeName()} Service Provider Report`;
+      const date = new Date().toLocaleDateString();
+      pdf.setFontSize(20);
+      pdf.text(reportTitle, pageWidth / 2, 15, { align: "center" });
+      pdf.setFontSize(12);
+      pdf.text(`Generated on: ${date}`, pageWidth / 2, 22, { align: "center" });
+
+      pdf.setFontSize(16);
+      pdf.text("Summary Statistics", 15, 35);
+      pdf.setFontSize(12);
+      pdf.text(
+        `Total Revenue: $${dashboardData?.totalRevenue.toLocaleString() || 0}`,
+        20,
+        45
+      );
+      pdf.text(
+        `Total Bookings: ${dashboardData?.totalBookings.toLocaleString() || 0}`,
+        20,
+        52
+      );
+      pdf.text(
+        `Revenue Growth: ${dashboardData?.revenueGrowthPercentage || 0}%`,
+        20,
+        59
+      );
+
+      const chartElement = dashboardRef.current.querySelector(
+        ".revenue-chart-container"
+      );
+      if (chartElement) {
+        pdf.setFontSize(16);
+        pdf.text("Revenue Overview", 15, 75);
+
+        const chartCanvas = await html2canvas(chartElement as HTMLElement, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+        });
+
+        const chartImgData = chartCanvas.toDataURL("image/png");
+        const chartImgWidth = 180;
+        const chartImgHeight =
+          (chartCanvas.height * chartImgWidth) / chartCanvas.width;
+
+        pdf.addImage(
+          chartImgData,
+          "PNG",
+          15,
+          80,
+          chartImgWidth,
+          chartImgHeight
+        );
+
+        let yPosition = 80 + chartImgHeight + 15;
+
+        if (yPosition > pageHeight - 50) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+
+        pdf.setFontSize(16);
+        pdf.text("Recent Bookings", 15, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(100);
+        const tableHeaders = [
+          "ID",
+          "Customer",
+          "Service",
+          "Price",
+          "Date",
+          "Status",
+        ];
+        const colWidths = [15, 50, 50, 20, 30, 25];
+        let xPosition = 15;
+
+        tableHeaders.forEach((header, i) => {
+          pdf.text(header, xPosition, yPosition);
+          xPosition += colWidths[i];
+        });
+
+        yPosition += 6;
+        pdf.setDrawColor(200);
+        pdf.line(15, yPosition - 3, 190, yPosition - 3);
+
+        pdf.setTextColor(0);
+        const bookingsToShow = bookings.slice(0, 10); 
+
+        bookingsToShow.forEach((booking, index) => {
+          if (yPosition > pageHeight - 10) {
+            pdf.addPage();
+            yPosition = 20;
+
+            xPosition = 15;
+            tableHeaders.forEach((header, i) => {
+              pdf.text(header, xPosition, yPosition);
+              xPosition += colWidths[i];
+            });
+            yPosition += 6;
+            pdf.line(15, yPosition - 3, 190, yPosition - 3);
+          }
+
+          xPosition = 15;
+          pdf.text(booking.bookingId.toString(), xPosition, yPosition);
+          xPosition += colWidths[0];
+
+          const truncate = (text: string, maxLength: number) => {
+            return text.length > maxLength
+              ? text.substring(0, maxLength) + "..."
+              : text;
+          };
+
+          pdf.text(truncate(booking.customerName, 20), xPosition, yPosition);
+          xPosition += colWidths[1];
+
+          pdf.text(truncate(booking.serviceName, 20), xPosition, yPosition);
+          xPosition += colWidths[2];
+
+          pdf.text(`$${booking.price}`, xPosition, yPosition);
+          xPosition += colWidths[3];
+
+          pdf.text(booking.date, xPosition, yPosition);
+          xPosition += colWidths[4];
+
+          const status = StatusMap[getBookingStatusEnum(booking.bookingStatus)];
+          pdf.text(status, xPosition, yPosition);
+
+          yPosition += 7;
+        });
+      }
+
+      const pageCount = (pdf as any).getNumberOfPages(); 
+    
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(10);
+        pdf.setTextColor(150);
+        pdf.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 10, {
+          align: "center",
+        });
+      }
+
+      pdf.save(
+        `service-provider-${getReportTimeRangeName().toLowerCase()}-report.pdf`
+      );
+      message.success({
+        content: "PDF report generated successfully!",
+        key: "pdfGen",
+        duration: 3,
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      message.error({
+        content: "Failed to generate PDF report",
+        key: "pdfGen",
+        duration: 3,
+      });
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
+  const timeRangeOptions = [
+    { value: "1m", label: "Last Month" },
+    { value: "3m", label: "Last 3 Months" },
+    { value: "6m", label: "Last 6 Months" },
+    { value: "1y", label: "Last Year" },
+  ];
+
   return (
-    <div className="p-6 w-full max-w-5xl mx-auto flex-1 ml-16 md:ml-96">
+    <div
+      className="p-6 w-full max-w-5xl mx-auto flex-1 ml-16 md:ml-96"
+      ref={dashboardRef}
+    >
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <Select
+            value={timeRange}
+            onChange={setTimeRange}
+            options={timeRangeOptions}
+            style={{ width: 150 }}
+          />
+          <Button
+            type="primary"
+            icon={<AiOutlineFilePdf />}
+            onClick={generatePdfReport}
+            loading={generatingPdf}
+            className="flex items-center"
+          >
+            Export {getReportTimeRangeName()} Report
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card className="shadow-md">
           <div className="flex items-center justify-between">
@@ -583,19 +808,7 @@ const Page: React.FC = () => {
 
       <Card
         title="Revenue Overview"
-        extra={
-          <Select
-            defaultValue="6m"
-            onChange={setTimeRange}
-            options={[
-              { value: "1m", label: "Last Month" },
-              { value: "3m", label: "Last 3 Months" },
-              { value: "6m", label: "Last 6 Months" },
-              { value: "1y", label: "Last Year" },
-            ]}
-          />
-        }
-        className="mb-6 shadow-md"
+        className="mb-6 shadow-md revenue-chart-container"
       >
         <div className="h-[400px]">
           {loading ? (
