@@ -7,7 +7,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import type { RcFile } from "antd/es/upload/interface";
 import apiRoutes from "@/app/config/apiRoutes";
 
-const Page = () => {
+export default function Page() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -189,6 +189,4 @@ const Page = () => {
       </div>
     </div>
   );
-};
-
-export default Page;
+}
