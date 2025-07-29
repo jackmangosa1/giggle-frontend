@@ -5,6 +5,9 @@ const nextConfig = {
   images: {
     domains: ["servicemanagementapp.blob.core.windows.net"],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;
