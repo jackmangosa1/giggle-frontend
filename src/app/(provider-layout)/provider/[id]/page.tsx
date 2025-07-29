@@ -640,7 +640,7 @@ const Page: React.FC = () => {
         pdf.line(15, yPosition - 3, 190, yPosition - 3);
 
         pdf.setTextColor(0);
-        const bookingsToShow = bookings.slice(0, 10); 
+        const bookingsToShow = bookings.slice(0, 10);
 
         bookingsToShow.forEach((booking, index) => {
           if (yPosition > pageHeight - 10) {
@@ -685,8 +685,8 @@ const Page: React.FC = () => {
         });
       }
 
-      const pageCount = (pdf as any).getNumberOfPages(); 
-    
+      const pageCount = (pdf as any).getNumberOfPages();
+
       for (let i = 1; i <= pageCount; i++) {
         pdf.setPage(i);
         pdf.setFontSize(10);

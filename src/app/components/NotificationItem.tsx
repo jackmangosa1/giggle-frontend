@@ -8,6 +8,7 @@ import {
 import { useNotifications } from "../contexts/NotificationContext";
 import { useFlutterwave } from "flutterwave-react-v3";
 import apiRoutes from "../config/apiRoutes";
+import { message } from "antd";
 
 type NotificationItemProps = {
   notification: Notification;
@@ -96,22 +97,37 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
     newStatus: BookingStatus,
     bookingId?: number
   ) => {
-    await fetch(`${apiRoutes.confirmBooking}/${bookingId}/status`, {
+    const res = await fetch(`${apiRoutes.confirmBooking}/${bookingId}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newStatus),
     });
+
+    if (res.ok) {
+      message.success("Service completion confirmed");
+    } else {
+      message.error("Failed to confirm service");
+    }
   };
 
   const handleCompleteClick = async (
     newStatus: BookingStatus,
     bookingId?: number
   ) => {
-    await fetch(`${apiRoutes.updateBookingStatus}/${bookingId}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newStatus),
-    });
+    const res = await fetch(
+      `${apiRoutes.updateBookingStatus}/${bookingId}/status`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newStatus),
+      }
+    );
+
+    if (res.ok) {
+      message.success("Booking completed");
+    } else {
+      message.error("Failed to complete booking");
+    }
   };
 
   const showPayButton =
