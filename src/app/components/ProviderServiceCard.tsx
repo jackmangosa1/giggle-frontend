@@ -1,7 +1,6 @@
 import Image, { StaticImageData } from "next/image";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
-import { Service } from "../(provider-layout)/provider/[id]/profile/page";
-// Service Card Component
+import { Service } from "../types/types";
 
 const ServiceCard = ({
   service,
@@ -17,7 +16,7 @@ const ServiceCard = ({
       <div className="relative">
         <div className="relative h-48 w-full">
           <Image
-            src={service.mediaUrl ?? ''}
+            src={service.mediaUrl ?? ""}
             alt={service.name}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             fill
