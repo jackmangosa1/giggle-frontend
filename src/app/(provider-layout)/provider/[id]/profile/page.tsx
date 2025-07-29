@@ -11,53 +11,12 @@ import apiRoutes from "@/app/config/apiRoutes";
 import { useRouter } from "next/navigation";
 import AvailabilityStatusSelector from "@/app/components/AvailabilityStatusSelector";
 import { useProviderStatus } from "@/app/hooks/useProviderStatus";
-
-export enum PriceType {
-  fixed = 1,
-}
-interface ProviderProfile {
-  id: number;
-  displayName: string;
-  bio: string;
-  skills: string[];
-  profilePictureUrl?: string;
-  userName: string;
-  email: string;
-  phoneNumber: string;
-}
-
-export interface Service {
-  id: number;
-  name: string;
-  description: string;
-  mediaUrl?: string;
-  categoryName: string;
-  price: number;
-  priceType: PriceType;
-}
-
-export interface CompletedService {
-  id: number;
-  title: string;
-  description: string;
-  mediaUrl?: string;
-  completedAt: string;
-  reviews: Review[];
-}
-
-interface Review {
-  id: number;
-  userId: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-  userName: string;
-}
-
-interface Skill {
-  id: number;
-  name: string;
-}
+import {
+  CompletedService,
+  ProviderProfile,
+  Service,
+  Skill,
+} from "@/app/types/types";
 
 const ProfilePage = () => {
   const router = useRouter();

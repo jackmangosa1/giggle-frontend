@@ -3,7 +3,7 @@ export enum AvailabilityStatus {
   Available = 0,
   Busy = 1,
   Offline = 2,
-  Away = 3
+  Away = 3,
 }
 
 export type Conversation = {
@@ -24,7 +24,6 @@ export type Message = {
   sentAt: string;
   isRead: boolean;
 };
-
 
 export enum BookingStatus {
   Pending = 0,
@@ -81,6 +80,7 @@ export interface ProviderProfile {
   profilePictureUrl?: string;
   userName: string;
   email: string;
+  phoneNumber: string;
 }
 
 export interface Service {
