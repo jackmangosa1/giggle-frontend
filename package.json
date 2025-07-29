@@ -8,6 +8,16 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "overrides": {
+    "flutterwave-react-v3": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
+  "resolutions": {
+    "flutterwave-react-v3/react": "$react",
+    "flutterwave-react-v3/react-dom": "$react-dom"
+  },
   "dependencies": {
     "@microsoft/signalr": "^8.0.7",
     "antd": "^5.20.1",
